@@ -1,0 +1,6 @@
+﻿--- REPOSITORIES ---
+ID: cmn0lc9fx0002k28mdn60y9y1 | GitHubID: 1171738933 | Name: BWT_Obsidian_Logic | Status: connected | UserID: cmn0j8h4w0000k28md6lzin98
+--- USERS ---
+ID: admin-boot | Email: admin@godnix.com | Token: NO
+  Role: SUPER_ADMIN
+ID: cmn0j8h4w0000k28md6lzin98 | Email: nischaykademane2006@gmail.com | Token: YES

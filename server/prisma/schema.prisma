@@ -1,0 +1,143 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum AdminRole {
+  SUPER_ADMIN
+  ORG_ADMIN
+  BILLING_ADMIN
+  SECURITY_ADMIN
+  SUPPORT_ADMIN
+  READ_ONLY_ADMIN
+}
+
+model User {
+  id                  String               @id @default(cuid())
+  githubId            String?              @unique
+  githubAccessToken   String?
+  username            String
+  email               String?              @unique
+  passwordHash        String?
+  salt                String?
+  avatarUrl           String?
+  onboardingCompleted Boolean              @default(false)
+  roleAssignments     AdminRoleAssignment[]
+  sessions            AdminSession[]
+  auditLogs           AuditLog[]           @relation("ActorLogs")
+  targetLogs          AuditLog[]           @relation("TargetLogs")
+  repositories        Repository[]
+  firstName           String?
+  lastName            String?
+  bio                 String?
+  notifications       Notification[]
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
+}
+
+model Repository {
+  id            String        @id @default(cuid())
+  githubRepoId  BigInt        @unique
+  name          String
+  fullName      String
+  owner         String
+  description   String?
+  htmlUrl       String
+  status        String        @default("disconnected") // connected, disconnected
+  health        String        @default("none")
+  lastSync      DateTime?
+  userId        String
+  user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  pullRequests  PullRequest[]
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+}
+
+model PullRequest {
+  id            String     @id @default(cuid())
+  githubPrId    BigInt     @unique
+  number        Int
+  title         String
+  state         String
+  author        String
+  authorAvatar  String?
+  htmlUrl       String
+  additions     Int        @default(0)
+  deletions     Int        @default(0)
+  changedFiles  Int        @default(0)
+  healthScore   Int?       // 0-100
+  aiFeedback    Json?
+  lastScannedAt DateTime?
+  repositoryId  String
+  repository    Repository @relation(fields: [repositoryId], references: [id], onDelete: Cascade)
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+}
+
+model AdminRoleAssignment {
+  id        String    @id @default(cuid())
+  userId    String
+  role      AdminRole
+  assignedBy String
+  expiresAt DateTime?
+  user      User      @relation(fields: [userId], references: [id])
+  createdAt DateTime  @default(now())
+
+  @@unique([userId, role])
+}
+
+model AdminSession {
+  id         String   @id @default(cuid())
+  userId     String
+  sessionId  String   @unique
+  roles      Json     // Array of roles at session creation
+  lastActive DateTime @default(now())
+  ip         String?
+  userAgent  String?
+  user       User     @relation(fields: [userId], references: [id])
+  createdAt  DateTime @default(now())
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  actorId    String
+  action     String
+  targetType String
+  targetId   String?
+  beforeData Json?
+  afterData  Json?
+  metadata   Json?
+  requestId  String?
+  ip         String?
+  userAgent  String?
+  actor      User     @relation("ActorLogs", fields: [actorId], references: [id])
+  targetUser User?    @relation("TargetLogs", fields: [targetId], references: [id])
+  createdAt  DateTime @default(now())
+}
+
+model FeatureFlag {
+  id                String   @id @default(cuid())
+  name              String   @unique
+  isEnabled         Boolean  @default(false)
+  rolloutPercentage Int      @default(0)
+  criteria          Json?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+}
+model Notification {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+  title       String
+  description String
+  type        String   @default("info") // info, success, warning, error
+  read        Boolean  @default(false)
+  createdAt   DateTime @default(now())
+}
