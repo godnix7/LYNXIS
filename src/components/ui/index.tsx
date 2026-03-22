@@ -4,14 +4,9 @@ import type { HTMLMotionProps } from 'framer-motion';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
-/**
- * Utility to merge tailwind classes
- */
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
-
-// --- Button Component ---
 
 interface ButtonProps extends Omit<HTMLMotionProps<'button'>, 'children'> {
   variant?: 'primary' | 'secondary' | 'outline' | 'ghost' | 'glass' | 'danger';
@@ -65,8 +60,6 @@ export const Button = ({
   );
 };
 
-// --- Input Component ---
-
 interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   label?: string;
   error?: string;
@@ -91,8 +84,6 @@ export const Input = ({ label, error, className, ...props }: InputProps) => {
     </div>
   );
 };
-
-// --- Card Component ---
 
 export const Card = ({ 
   children, 
@@ -122,8 +113,6 @@ export const Card = ({
   );
 };
 
-// --- Badge Component ---
-
 export const Badge = ({ children, variant = 'neutral', className }: any) => {
     const variants: any = {
         neutral: 'bg-white/5 text-[var(--text-secondary)] border-white/10',
@@ -139,5 +128,69 @@ export const Badge = ({ children, variant = 'neutral', className }: any) => {
         )}>
             {children}
         </span>
+    );
+};
+
+export const ErrorState = ({ 
+    title = "Connection Failed", 
+    message = "We couldn't reach the backend services. Please ensure your Docker containers are running and try again.",
+    onRetry,
+    error,
+    icon: Icon
+}: { 
+    title?: string; 
+    message?: string; 
+    onRetry?: () => void;
+    error?: string;
+    icon?: React.ElementType;
+}) => {
+    const [showDetails, setShowDetails] = React.useState(false);
+    
+    return (
+        <Card className="max-w-2xl mx-auto my-12 p-8 border-red-500/20 bg-red-500/[0.02] relative group overflow-hidden">
+            <div className="absolute inset-0 bg-red-500/[0.01] pointer-events-none" />
+            <div className="flex flex-col items-center text-center space-y-6 relative z-10">
+                <div className="p-4 rounded-2xl bg-red-500/10 text-red-500">
+                    {Icon ? React.createElement(Icon as any, { size: 32 }) : (
+                        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                    )}
+                </div>
+                <div className="space-y-2">
+                    <h3 className="text-2xl font-bold text-white tracking-tight">{title}</h3>
+                    <p className="text-[var(--text-secondary)] leading-relaxed">{message}</p>
+                </div>
+                
+                <div className="flex flex-col sm:flex-row gap-4 w-full justify-center">
+                    {onRetry && (
+                        <Button 
+                            onClick={onRetry}
+                            className="bg-white/5 hover:bg-white/10 border-white/10 gap-2"
+                        >
+                            Try Again
+                        </Button>
+                    )}
+                    <Button 
+                        variant="ghost" 
+                        size="sm"
+                        onClick={() => setShowDetails(!showDetails)}
+                        className="text-xs uppercase tracking-widest font-bold opacity-50 hover:opacity-100"
+                    >
+                        {showDetails ? 'Hide' : 'View'} Diagnostic Data
+                    </Button>
+                </div>
+
+                {showDetails && error && (
+                    <motion.div 
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: 'auto' }}
+                        className="w-full text-left p-4 rounded-xl bg-black/40 border border-white/5"
+                    >
+                        <p className="text-[10px] font-mono text-red-400/70 break-all leading-tight">
+                            {error}
+                        </p>
+                    </motion.div>
+                )}
+            </div>
+        </Card>
     );
 };

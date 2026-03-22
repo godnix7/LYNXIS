@@ -1,38 +1,58 @@
 import { useState, useEffect } from 'react';
 import { 
   Users, GitPullRequest, Activity, 
-  TrendingUp, Clock, ShieldCheck, Zap
+  TrendingUp, ShieldCheck, Zap
 } from 'lucide-react';
-import { Card, Badge } from '../../components/ui';
+import { Card, Badge, ErrorState } from '../../components/ui';
 
 const AdminOverview = () => {
     const [stats, setStats] = useState({ totalUsers: 0, activeReviews: 0, securityEvents: 0 });
     const [loading, setLoading] = useState(true);
+    const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+    const fetchStats = async () => {
+        try {
+            setLoading(true);
+            setErrorMsg(null);
+            const res = await fetch('http://localhost:4003/api/admin/stats', {
+                credentials: 'include'
+            });
+            if (res.ok) {
+                const data = await res.json();
+                setStats(data);
+            } else {
+                setErrorMsg(`Failed to fetch admin stats: ${res.status}`);
+            }
+        } catch (err: any) {
+            console.error('Failed to fetch stats:', err);
+            setErrorMsg(err.message);
+        } finally {
+            setLoading(false);
+        }
+    };
 
     useEffect(() => {
-        const fetchStats = async () => {
-            try {
-                const res = await fetch('http://localhost:4003/api/admin/stats', {
-                    credentials: 'include'
-                });
-                if (res.ok) {
-                    const data = await res.json();
-                    setStats(data);
-                }
-            } catch (err) {
-                console.error('Failed to fetch stats:', err);
-            } finally {
-                setLoading(false);
-            }
-        };
         fetchStats();
     }, []);
 
-    if (loading) return <div className="h-96 flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[var(--accent-primary)]"></div></div>;
+    if (loading) return <div className="h-96 flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-t-transparent border-[var(--accent-primary)]"></div></div>;
+
+    if (errorMsg) return (
+        <div className="py-20">
+            <ErrorState 
+                error={errorMsg} 
+                onRetry={fetchStats}
+                title={errorMsg.includes('Failed to fetch') || errorMsg.includes('NetworkError') ? "Admin API Offline" : "Access Denied"}
+                message={errorMsg.includes('Failed to fetch') || errorMsg.includes('NetworkError') 
+                    ? "The Lynxis admin services are currently unreachable. Please verify that Docker is operational." 
+                    : "We encountered an issue accessing the administrative dashboard. Please try again or contact support."
+                }
+            />
+        </div>
+    );
 
     return (
         <div className="space-y-8 pb-12">
-            {/* KPI Cards */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 <KPICard 
                     label="Total Users" 
@@ -64,7 +84,6 @@ const AdminOverview = () => {
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                {/* Real-time feed placeholder (could also be fetched) */}
                 <Card className="lg:col-span-2 p-8 border-white/5 bg-white/[0.02]">
                     <div className="flex items-center justify-between mb-8">
                         <div>
@@ -74,7 +93,6 @@ const AdminOverview = () => {
                         <Badge variant="glass" className="bg-white/5">Global Feed</Badge>
                     </div>
                     <div className="space-y-6">
-                        {/* No real feed implemented yet, showing empty instead of fake logs */}
                         <p className="text-center text-[var(--text-muted)] italic py-10">No recent system activity recorded.</p>
                     </div>
                 </Card>
@@ -128,16 +146,6 @@ const KPICard = ({ label, value, change, status, icon: Icon, color, trend = 'up'
     </Card>
     );
 };
-
-const ActivityItem = ({ actor, action, time, type }: any) => (
-    <div className="flex items-start gap-4">
-        <div className={`mt-1 h-2 w-2 rounded-full shrink-0 ${type === 'success' ? 'bg-green-500' : 'bg-[var(--accent-primary)]'}`} />
-        <div className="flex-1 space-y-1">
-            <p className="text-sm leading-tight"><span className="text-white font-bold">{actor}</span><span className="text-[var(--text-muted)] ml-2">{action}</span></p>
-            <div className="flex items-center gap-2 text-[var(--text-muted)] text-[10px] uppercase font-bold tracking-widest"><Clock size={12} />{time}</div>
-        </div>
-    </div>
-);
 
 const ServiceStatus = ({ label, status }: any) => (
     <div className="flex items-center justify-between p-3 rounded-lg bg-white/5 border border-white/5 group hover:bg-white/10 transition-all">

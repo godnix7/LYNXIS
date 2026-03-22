@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Database, Plus, Search, Filter, ExternalLink, GitPullRequest, Shield, CheckCircle2, AlertCircle, ChevronRight, Loader2 } from 'lucide-react';
-import { Card, Button, Input, Badge } from '../../components/ui';
+import { Card, Button, Input, Badge, ErrorState } from '../../components/ui';
 
 interface Repository {
   id: string;
@@ -21,19 +21,24 @@ const RepoList = ({ onSelectRepo }: { onSelectRepo: (id: string) => void }) => {
   const [repositories, setRepositories] = useState<Repository[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   const fetchRepos = async () => {
     try {
       setIsLoading(true);
+      setErrorMsg(null);
       const res = await fetch('http://localhost:4003/api/repos', {
           credentials: 'include'
       });
       if (res.ok) {
           const data = await res.json();
           setRepositories(data);
+      } else {
+          setErrorMsg(`Failed to load repositories: ${res.status}`);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to fetch repos:', error);
+      setErrorMsg(error.message);
     } finally {
       setIsLoading(false);
     }
@@ -52,7 +57,7 @@ const RepoList = ({ onSelectRepo }: { onSelectRepo: (id: string) => void }) => {
         credentials: 'include'
       });
       if (res.ok) {
-        fetchRepos(); // Refresh list
+        fetchRepos();
       }
     } catch (error) {
       console.error('Failed to connect repo:', error);
@@ -82,7 +87,7 @@ const RepoList = ({ onSelectRepo }: { onSelectRepo: (id: string) => void }) => {
       repo.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
       repo.owner.toLowerCase().includes(searchQuery.toLowerCase())
     )
-    .sort((a, b) => (a.status === 'connected' ? -1 : 1));
+    .sort((a, b) => (a.status === 'connected' ? -1 : (b.status === 'connected' ? 1 : 0)));
 
   return (
     <div className="space-y-12 animate-reveal">
@@ -117,6 +122,16 @@ const RepoList = ({ onSelectRepo }: { onSelectRepo: (id: string) => void }) => {
         <div className="flex justify-center p-20">
           <Loader2 className="animate-spin text-[var(--accent-primary)]" size={40} />
         </div>
+      ) : errorMsg ? (
+        <ErrorState 
+          error={errorMsg} 
+          onRetry={fetchRepos}
+          title={errorMsg.includes('Failed to fetch') || errorMsg.includes('NetworkError') ? "Backend Unreachable" : "Connection Failed"}
+          message={errorMsg.includes('Failed to fetch') || errorMsg.includes('NetworkError') 
+            ? "We can't connect to the Lynxis backend. Please ensure Docker is running." 
+            : "Something went wrong while loading your repositories."
+          }
+        />
       ) : (
         <div className="grid gap-4">
           {filteredRepos.length === 0 && (
@@ -136,9 +151,7 @@ const RepoList = ({ onSelectRepo }: { onSelectRepo: (id: string) => void }) => {
                   onClick={() => repo.status === 'connected' ? onSelectRepo(repo.id) : connectRepo(repo)}
               >
                 <div className="flex items-center gap-6">
-                  <div className={`rounded-2xl p-4 shadow-inner ${
-                    repo.status === 'connected' ? 'bg-[var(--accent-primary)]/10 text-[var(--accent-primary)]' : 'bg-white/5 text-white/10'
-                  }`}>
+                  <div className={`rounded-2xl p-4 shadow-inner ${repo.status === 'connected' ? 'bg-[var(--accent-primary)]/10 text-[var(--accent-primary)]' : 'bg-white/5 text-white/10'}`}>
                     <Database size={28} />
                   </div>
                   <div className="space-y-1">

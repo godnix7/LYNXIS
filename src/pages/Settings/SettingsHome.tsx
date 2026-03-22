@@ -25,7 +25,6 @@ const SettingsHome = () => {
       </div>
 
       <div className="flex flex-col gap-10 lg:flex-row">
-        {/* Sidebar Navigation */}
         <div className="w-full lg:w-72 space-y-2">
           {tabs.map((tab) => (
             <button
@@ -48,7 +47,6 @@ const SettingsHome = () => {
           ))}
         </div>
 
-        {/* Content Area */}
         <div className="flex-1 min-h-[500px]">
           <AnimatePresence mode="wait">
             <motion.div
@@ -83,7 +81,7 @@ const ProfileSettings = ({ user }: any) => {
   const handleSave = async () => {
     setIsSaving(true);
     try {
-      const res = await fetch('http://localhost:4000/api/users/profile', {
+      const res = await fetch('http://localhost:4003/api/users/profile', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData),
@@ -232,7 +230,6 @@ const GovernanceSettings = () => {
     const [showDeleteModal, setShowDeleteModal ] = useState(false);
     const [twoFACode, setTwoFACode] = useState('');
     const [isDeleting, setIsDeleting] = useState(false);
-    const { } = useAuth();
 
     const handleDelete = async () => {
         if (!/^\d{6}$/.test(twoFACode)) {
@@ -286,7 +283,6 @@ const GovernanceSettings = () => {
             <Button variant="danger" className="w-full" onClick={() => setShowDeleteModal(true)}>Delete Account</Button>
         </div>
 
-        {/* Delete Confirmation Modal */}
         <AnimatePresence>
             {showDeleteModal && (
                 <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-black/80 backdrop-blur-sm">
@@ -319,8 +315,6 @@ const GovernanceSettings = () => {
       </Card>
     );
 };
-
-
 
 const IntegrationCard = ({ name, icon, status, desc, color }: any) => (
   <Card className="flex flex-col gap-6 bg-white/[0.01] border-white/5 hover:border-white/10">

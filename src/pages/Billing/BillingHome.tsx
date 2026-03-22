@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Check, Zap, Shield, Crown, CreditCard, ChevronRight, ArrowRight } from 'lucide-react';
+import { Check, Zap, Shield, Crown, CreditCard, ChevronRight } from 'lucide-react';
 import { Card, Button, Badge } from '../../components/ui';
 
 const plans = [
@@ -61,7 +61,6 @@ const BillingHome = () => {
         ))}
       </div>
 
-      {/* Billing Stats / Details */}
       <div className="grid gap-8 lg:grid-cols-2">
           <Card className="flex flex-col gap-8 md:flex-row md:items-center md:justify-between bg-white/[0.01] border-white/5 py-8 px-10">
             <div className="flex items-center gap-6">
@@ -85,13 +84,11 @@ const BillingHome = () => {
                     <p className="text-sm text-[var(--text-muted)] italic">No billing history available yet.</p>
                 </div>
                 <div className="h-10 w-10 animated-pulse rounded-full border border-white/5 flex items-center justify-center text-[var(--text-muted)]">
-                    {/* Placeholder for future links */}
                 </div>
             </div>
           </Card>
       </div>
 
-      {/* Trust Bar */}
       <div className="flex flex-wrap items-center justify-center gap-12 opacity-30 grayscale hover:grayscale-0 transition-all hover:opacity-100 py-4">
         {['GitLab', 'Postman', 'Vercel', 'Stripe', 'Framer'].map(logo => (
             <span key={logo} className="text-xl font-bold tracking-tighter text-white">{logo}</span>

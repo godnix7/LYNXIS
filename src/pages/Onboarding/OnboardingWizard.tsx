@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { 
     Database, Users, User, ChevronRight, ChevronLeft, Check, Loader2 
 } from 'lucide-react';
-import { Card, Button, Input, Badge } from '../../components/ui';
+import { Card, Button, Input, Badge, ErrorState } from '../../components/ui';
 import { useAuth } from '../../context/AuthContext';
 
 const steps = [
@@ -22,18 +22,23 @@ const OnboardingWizard = () => {
   const [repos, setRepos] = useState<any[]>([]);
   const [selectedRepoId, setSelectedRepoId] = useState<string | null>(null);
   const [isLoadingRepos, setIsLoadingRepos] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const { completeOnboarding } = useAuth();
 
   const fetchRepos = async () => {
     setIsLoadingRepos(true);
+    setErrorMsg(null);
     try {
       const res = await fetch('http://localhost:4003/api/repos', { credentials: 'include' });
       if (res.ok) {
         const data = await res.json();
         setRepos(data);
+      } else {
+        setErrorMsg(`Failed to load repositories: ${res.status}`);
       }
-    } catch (e) {
+    } catch (e: any) {
       console.error('Failed to fetch repos in onboarding:', e);
+      setErrorMsg(e.message);
     } finally {
       setIsLoadingRepos(false);
     }
@@ -41,13 +46,11 @@ const OnboardingWizard = () => {
 
   const nextStep = async () => {
     if (currentStep === 2) {
-        // Fetch repos when moving to step 3
         fetchRepos();
     }
 
     if (currentStep < 3) setCurrentStep(currentStep + 1);
     else {
-        // If we selected a repo, connect it first
         if (selectedRepoId) {
             const repoToConnect = repos.find(r => r.id === selectedRepoId || r.githubRepoId.toString() === selectedRepoId);
             if (repoToConnect) {
@@ -76,7 +79,6 @@ const OnboardingWizard = () => {
       <div className="mesh-glow" />
       
       <div className="w-full max-w-4xl space-y-12">
-        {/* Header */}
         <div className="text-center space-y-4 animate-reveal">
           <Badge variant="primary" className="bg-[var(--accent-primary)]/10 px-4 py-1.5 shadow-[0_0_20px_rgba(59,130,246,0.2)]">
             Setup Wizard
@@ -86,30 +88,22 @@ const OnboardingWizard = () => {
           </h1>
         </div>
 
-        {/* Stepper */}
         <div className="relative flex items-center justify-between px-12 animate-reveal delay-1">
           <div className="absolute top-1/2 left-0 h-0.5 w-full -translate-y-1/2 bg-white/5 z-0" />
           {steps.map((step) => (
             <div key={step.id} className="relative z-10 flex flex-col items-center gap-3">
               <div 
-                className={`flex h-12 w-12 items-center justify-center rounded-2xl border transition-all duration-500 shadow-xl ${
-                  currentStep >= step.id 
-                    ? 'bg-[var(--accent-primary)] border-[var(--accent-primary)] text-white shadow-[0_0_20px_rgba(59,130,246,0.3)]' 
-                    : 'bg-[#050505] border-white/10 text-[var(--text-muted)]'
-                }`}
+                className={`flex h-12 w-12 items-center justify-center rounded-2xl border transition-all duration-500 shadow-xl ${currentStep >= step.id ? 'bg-[var(--accent-primary)] border-[var(--accent-primary)] text-white shadow-[0_0_20px_rgba(59,130,246,0.3)]' : 'bg-[#050505] border-white/10 text-[var(--text-muted)]'}`}
               >
                 {currentStep > step.id ? <Check size={20} /> : step.icon}
               </div>
-              <span className={`text-[10px] font-extrabold uppercase tracking-widest transition-colors ${
-                currentStep >= step.id ? 'text-white' : 'text-[var(--text-muted)]'
-              }`}>
+              <span className={`text-[10px] font-extrabold uppercase tracking-widest transition-colors ${currentStep >= step.id ? 'text-white' : 'text-[var(--text-muted)]'}`}>
                 {step.title}
               </span>
             </div>
           ))}
         </div>
 
-        {/* Form area */}
         <Card className="min-h-[400px] bg-white/[0.01] border-white/5 p-10 flex flex-col justify-between animate-reveal delay-2">
             <AnimatePresence mode="wait">
                 <motion.div
@@ -157,19 +151,24 @@ const OnboardingWizard = () => {
                                     <div className="flex justify-center p-10">
                                         <Loader2 className="animate-spin text-[var(--accent-primary)]" size={32} />
                                     </div>
+                                ) : errorMsg ? (
+                                    <div className="py-4">
+                                        <ErrorState 
+                                            error={errorMsg} 
+                                            onRetry={fetchRepos}
+                                            title="Backend Unreachable"
+                                            message="We need to connect to your GitHub repositories, but the backend service is offline. Please start Docker."
+                                        />
+                                    </div>
                                 ) : repos.length === 0 ? (
-                                    <p className="text-center text-[var(--text-muted)] py-10 italic italic italic italic">
+                                    <p className="text-center text-[var(--text-muted)] py-10 italic">
                                         No repositories found. Ensure your GitHub account is linked.
                                     </p>
                                 ) : (
                                     repos.map((repo) => (
                                         <div 
                                             key={repo.id} 
-                                            className={`flex items-center justify-between p-4 rounded-xl border cursor-pointer transition-all group ${
-                                                selectedRepoId === repo.id 
-                                                    ? 'bg-[var(--accent-primary)]/10 border-[var(--accent-primary)]/50' 
-                                                    : 'bg-white/[0.02] border-white/5 hover:bg-white/[0.04]'
-                                            }`}
+                                            className={`flex items-center justify-between p-4 rounded-xl border cursor-pointer transition-all group ${selectedRepoId === repo.id ? 'bg-[var(--accent-primary)]/10 border-[var(--accent-primary)]/50' : 'bg-white/[0.02] border-white/5 hover:bg-white/[0.04]'}`}
                                             onClick={() => setSelectedRepoId(repo.id)}
                                         >
                                             <div className="flex items-center gap-4">
@@ -179,11 +178,7 @@ const OnboardingWizard = () => {
                                                     <span className="text-[10px] text-[var(--text-muted)]">{repo.fullName}</span>
                                                 </div>
                                             </div>
-                                            <div className={`h-5 w-5 rounded-full border transition-all flex items-center justify-center ${
-                                                selectedRepoId === repo.id 
-                                                    ? 'border-[var(--accent-primary)] bg-[var(--accent-primary)]' 
-                                                    : 'border-white/10 group-hover:border-[var(--accent-primary)]'
-                                            }`}>
+                                            <div className={`h-5 w-5 rounded-full border transition-all flex items-center justify-center ${selectedRepoId === repo.id ? 'border-[var(--accent-primary)] bg-[var(--accent-primary)]' : 'border-white/10 group-hover:border-[var(--accent-primary)]'}`}>
                                                 {selectedRepoId === repo.id && <Check size={12} className="text-white" />}
                                             </div>
                                         </div>
@@ -220,7 +215,6 @@ const OnboardingWizard = () => {
     </div>
   );
 };
-
 
 const TeamStep = () => (
     <div className="space-y-6">
