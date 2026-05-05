@@ -1,6 +1,5 @@
 import React from 'react';
 import { Key, CheckCircle2, Shield, Zap, Sparkles } from 'lucide-react';
-import { motion } from 'framer-motion';
 import { Card, Input, Button, cn } from '../ui';
 
 interface AIKey {
@@ -54,7 +53,7 @@ export const MultiAIKeyBar = ({ keys, onKeyChange, onSave, isSaving, hasSaved }:
             <div className="flex flex-col md:flex-row md:items-center gap-6">
               <div className="flex items-center gap-3 min-w-[200px]">
                 <div className={cn("p-2 rounded-lg bg-white/5", agent.color)}>
-                  <agent.icon size={18} />
+                  {React.createElement(agent.icon as any, { size: 18 })}
                 </div>
                 <span className="text-sm font-semibold text-white">{agent.name}</span>
               </div>
