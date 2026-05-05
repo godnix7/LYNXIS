@@ -1,1 +1,3 @@
-export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '${API_BASE_URL}';
+// Using relative path for "one URL" deployment. 
+// This works if your frontend and backend are served from the same domain.
+export const API_BASE_URL = ''; 

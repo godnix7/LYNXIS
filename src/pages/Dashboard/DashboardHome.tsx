@@ -9,6 +9,7 @@ import {
 import { Card, Button, Badge } from '../../components/ui';
 import { useNotifications } from '../../context/NotificationContext';
 import { useAuth } from '../../context/AuthContext';
+import { useAI } from '../../context/AIContext';
 
 interface Stats {
   openPrs: number;
@@ -20,6 +21,7 @@ interface Stats {
 
 const DashboardHome = ({ onNavigate }: { onNavigate: (tab: string) => void }) => {
   const { user } = useAuth();
+  const { selectedModel } = useAI();
   const [stats, setStats] = useState<Stats | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const { notifications, markAsRead } = useNotifications();
@@ -51,10 +53,16 @@ const DashboardHome = ({ onNavigate }: { onNavigate: (tab: string) => void }) =>
         className="flex flex-col md:flex-row md:items-end justify-between gap-8 pt-6"
       >
         <div className="space-y-4">
-          <Badge variant="warm" className="gap-2 px-3 py-1 text-[10px] tracking-[0.2em] uppercase font-black bg-[var(--accent-warm)]/10 text-[var(--accent-warm)] border-none">
-            <Fingerprint size={12} />
-            System Operational
-          </Badge>
+          <div className="flex gap-2">
+            <Badge variant="warm" className="gap-2 px-3 py-1 text-[10px] tracking-[0.2em] uppercase font-black bg-[var(--accent-warm)]/10 text-[var(--accent-warm)] border-none">
+              <Fingerprint size={12} />
+              System Operational
+            </Badge>
+            <Badge variant="primary" className="gap-2 px-3 py-1 text-[10px] tracking-[0.2em] uppercase font-black bg-[var(--accent-primary)]/10 text-[var(--accent-primary)] border-none">
+              <Cpu size={12} />
+              Agent: {selectedModel}
+            </Badge>
+          </div>
           <h1 className="font-display text-5xl md:text-8xl font-bold text-white tracking-tight leading-[0.85]">
             {greeting},<br />
             <span className="text-gradient-warm italic">{displayName}.</span>
