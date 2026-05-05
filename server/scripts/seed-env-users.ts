@@ -11,20 +11,25 @@ const prisma = new PrismaClient();
 async function seedUsers() {
     const usersToSeed = [
         {
-            email: process.env.ADMIN_USER_EMAIL || 'admin@godnix.com',
-            password: process.env.ADMIN_USER_PASSWORD || 'admin',
+            email: process.env.ADMIN_USER_EMAIL,
+            password: process.env.ADMIN_USER_PASSWORD,
             username: 'System Admin',
             role: AdminRole.SUPER_ADMIN,
             onboardingCompleted: true
         },
         {
-            email: process.env.TEST_USER_EMAIL || 'testuser@lynxis.ai',
-            password: process.env.TEST_USER_PASSWORD || 'password123',
+            email: process.env.TEST_USER_EMAIL,
+            password: process.env.TEST_USER_PASSWORD,
             username: 'Test User',
             role: null,
             onboardingCompleted: true
         }
     ];
+
+    if (!usersToSeed[0].email || !usersToSeed[0].password) {
+        console.error('ADMIN_USER_EMAIL or ADMIN_USER_PASSWORD not defined in .env');
+        return;
+    }
 
     console.log('--- Starting User Seeding ---');
 

@@ -8,10 +8,14 @@ dotenv.config({ path: path.join(__dirname, '../.env') });
 const prisma = new PrismaClient();
 
 async function seedAdmin() {
-    const email = 'admin@godnix.com';
-    const password = 'admin'; // User said "with that password", often implies simple or previous. I'll use 'admin' as a fallback if not sure, but I'll try to find more info. 
-    // Wait, "that password" usually refers to something recently discussed. 
-    const username = 'System Admin';
+    const email = process.env.ADMIN_USER_EMAIL;
+    const password = process.env.ADMIN_USER_PASSWORD;
+    const username = 'Admin User';
+
+    if (!email || !password) {
+        console.error('ADMIN_USER_EMAIL or ADMIN_USER_PASSWORD not defined in .env');
+        return;
+    }
 
     try {
         const salt = await bcrypt.genSalt(10);

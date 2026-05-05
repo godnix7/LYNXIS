@@ -1,351 +1,201 @@
-import { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { User, Users, Puzzle, ShieldCheck, Mail, Bell, Save, Plus, Globe, ChevronRight } from 'lucide-react';
-import { Card, Button, Input, Badge, cn } from '../../components/ui';
+import { useState, useEffect } from 'react';
+import { User, Lock, Bell, Globe, Trash2, LogOut, Key, CheckCircle2, Cpu, Sparkles } from 'lucide-react';
+import { Card, Button, Input, cn } from '../../components/ui';
+import { MultiAIKeyBar } from '../../components/settings/MultiAIKeyBar';
 import { useAuth } from '../../context/AuthContext';
+import { useAI, AIModel } from '../../context/AIContext';
 
 const SettingsHome = () => {
-  const [activeTab, setActiveTab ] = useState('profile');
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
+  const { aiKeys, saveKeys, selectedModel, setSelectedModel, setAiKeys } = useAI();
+  
+  const [firstName, setFirstName] = useState(user?.firstName || '');
+  const [lastName, setLastName] = useState(user?.lastName || '');
+  const [saving, setSaving] = useState(false);
+  const [activeTab, setActiveTab] = useState('profile');
 
-  const tabs = [
-    { id: 'profile', label: 'Profile', icon: <User size={18} /> },
-    { id: 'team', label: 'Team', icon: <Users size={18} /> },
-    { id: 'integrations', label: 'Integrations', icon: <Puzzle size={18} /> },
-    { id: 'rules', label: 'Rules & Governance', icon: <ShieldCheck size={18} /> },
-  ];
+  // Local keys state for the form
+  const [localKeys, setLocalKeys] = useState(aiKeys);
+  const [keysSaved, setKeysSaved] = useState(false);
 
-  if (!user) return null;
+  useEffect(() => {
+    setLocalKeys(aiKeys);
+  }, [aiKeys]);
 
-  return (
-    <div className="space-y-12 animate-reveal">
-      <div className="space-y-1">
-        <h1 className="text-4xl font-extrabold tracking-tighter text-white">Settings</h1>
-        <p className="text-lg text-[var(--text-secondary)]">Manage your account, team, and workspace preferences.</p>
-      </div>
-
-      <div className="flex flex-col gap-10 lg:flex-row">
-        <div className="w-full lg:w-72 space-y-2">
-          {tabs.map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`flex w-full items-center justify-between px-4 py-3 rounded-xl text-sm font-bold transition-all group ${
-                activeTab === tab.id 
-                  ? 'bg-white/5 text-white shadow-inner border border-white/5' 
-                  : 'text-[var(--text-muted)] hover:text-white hover:bg-white/[0.02]'
-              }`}
-            >
-              <div className="flex items-center gap-3">
-                <span className={`transition-colors ${activeTab === tab.id ? 'text-[var(--accent-primary)]' : 'group-hover:text-white'}`}>
-                  {tab.icon}
-                </span>
-                {tab.label}
-              </div>
-              {activeTab === tab.id && <ChevronRight size={14} className="text-[var(--accent-primary)]" />}
-            </button>
-          ))}
-        </div>
-
-        <div className="flex-1 min-h-[500px]">
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={activeTab}
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -20 }}
-              transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-            >
-              {activeTab === 'profile' && <ProfileSettings user={user} />}
-              {activeTab === 'team' && <TeamSettings />}
-              {activeTab === 'integrations' && <IntegrationSettings />}
-              {activeTab === 'rules' && <GovernanceSettings />}
-            </motion.div>
-          </AnimatePresence>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-const ProfileSettings = ({ user }: any) => {
-  const [isEditing, setIsEditing] = useState(false);
-  const [formData, setFormData] = useState({
-    firstName: user.firstName || '',
-    lastName: user.lastName || '',
-    bio: user.bio || ''
-  });
-  const [isSaving, setIsSaving] = useState(false);
-  const { fetchUser } = useAuth();
-
-  const handleSave = async () => {
-    setIsSaving(true);
+  const handleSaveProfile = async () => {
     try {
-      const res = await fetch('http://localhost:4003/api/users/profile', {
-        method: 'PATCH',
+      setSaving(true);
+      await fetch('http://localhost:4003/api/profile', {
+        method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
-        credentials: 'include'
+        credentials: 'include',
+        body: JSON.stringify({ firstName, lastName }),
       });
-      if (res.ok) {
-        await fetchUser();
-        setIsEditing(false);
-      }
-    } catch (error) {
-      console.error('Failed to update profile:', error);
-    } finally {
-      setIsSaving(false);
-    }
+    } catch (err) { console.error('Save failed:', err); }
+    finally { setSaving(false); }
   };
 
-  const displayName = user.firstName && user.lastName 
-    ? `${user.firstName} ${user.lastName}` 
-    : user.username;
+  const handleSaveKeys = () => {
+    saveKeys(localKeys);
+    setKeysSaved(true);
+    setTimeout(() => setKeysSaved(false), 3000);
+  };
+
+  const sections = [
+    { icon: User, label: 'Profile', id: 'profile' },
+    { icon: Cpu, label: 'AI Configuration', id: 'ai-config' },
+    { icon: Bell, label: 'Notifications', id: 'notifications' },
+    { icon: Lock, label: 'Security', id: 'security' },
+    { icon: Globe, label: 'Integrations', id: 'integrations' },
+  ];
+
+  const models: { id: AIModel; label: string; description: string }[] = [
+    { id: 'anthropic', label: 'Anthropic Claude', description: 'Advanced reasoning and code understanding.' },
+    { id: 'openai', label: 'OpenAI GPT-4', description: 'Highly versatile and widely used model.' },
+    { id: 'gemini', label: 'Google Gemini', description: 'Multimodal capabilities and fast responses.' },
+  ];
 
   return (
-    <Card className={cn(
-        "space-y-10 bg-white/[0.01] border-white/5 md:p-10 transition-all duration-500",
-        isEditing && "border-[var(--accent-primary)]/30 shadow-[0_0_50px_rgba(59,130,246,0.1)] ring-1 ring-[var(--accent-primary)]/20"
-    )}>
-        <div className="flex items-center justify-between border-b border-white/5 pb-10">
-          <div className="flex items-center gap-8">
-            <div className="relative group">
-                {user.avatarUrl ? (
-                    <img src={user.avatarUrl} alt={user.username} className="h-24 w-24 rounded-full border border-white/10 shadow-[0_0_30px_rgba(59,130,246,0.3)] object-cover" />
-                ) : (
-                    <div className="h-24 w-24 rounded-full bg-[var(--grad-primary)] shadow-[0_0_30px_rgba(59,130,246,0.3)] transition-transform group-hover:scale-105" />
+    <div className="space-y-8">
+      <div className="space-y-2">
+        <h2 className="text-3xl font-bold text-white tracking-tight">Settings</h2>
+        <p className="text-[var(--text-secondary)]">Manage your account, AI preferences, and integrations.</p>
+      </div>
+
+      <div className="grid lg:grid-cols-4 gap-6">
+        <Card className="lg:col-span-1 p-0 border-white/5 bg-white/[0.01] overflow-hidden h-fit">
+          <nav className="divide-y divide-white/5">
+            {sections.map((s) => (
+              <button 
+                key={s.id} 
+                onClick={() => setActiveTab(s.id)}
+                className={cn(
+                  "flex items-center gap-3 w-full px-5 py-4 text-sm font-medium transition-all",
+                  activeTab === s.id 
+                    ? "text-white bg-white/10" 
+                    : "text-[var(--text-secondary)] hover:text-white hover:bg-white/5"
                 )}
-                {isEditing && (
-                    <button className="absolute inset-0 flex items-center justify-center rounded-full bg-black/60 opacity-0 transition-opacity group-hover:opacity-100 border-2 border-dashed border-[var(--accent-primary)]/50">
-                      <Badge className="bg-[var(--accent-primary)]/20 text-white">Change</Badge>
+              >
+                <s.icon size={16} />
+                {s.label}
+              </button>
+            ))}
+          </nav>
+        </Card>
+
+        <div className="lg:col-span-3 space-y-6">
+          {activeTab === 'profile' && (
+            <>
+              <Card className="border-white/5 bg-white/[0.01] space-y-6">
+                <div className="flex items-center gap-3">
+                  <User size={20} className="text-[var(--accent-primary)]" />
+                  <h3 className="text-lg font-bold text-white">Profile Information</h3>
+                </div>
+                <div className="flex items-center gap-6 p-4 rounded-xl bg-white/[0.02] border border-white/5">
+                  {user?.avatarUrl ? (
+                    <img src={user.avatarUrl} className="h-16 w-16 rounded-2xl border border-white/10" alt="" />
+                  ) : (
+                    <div className="h-16 w-16 rounded-2xl bg-[var(--accent-primary)]/20 flex items-center justify-center text-2xl font-bold text-[var(--accent-primary)]">
+                      {user?.username?.charAt(0).toUpperCase()}
+                    </div>
+                  )}
+                  <div>
+                    <p className="text-lg font-bold text-white">{user?.username}</p>
+                    <p className="text-xs text-[var(--text-muted)]">{user?.email}</p>
+                  </div>
+                </div>
+                <div className="grid md:grid-cols-2 gap-4">
+                  <Input label="First Name" value={firstName} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFirstName(e.target.value)} />
+                  <Input label="Last Name" value={lastName} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setLastName(e.target.value)} />
+                  <Input label="Email" value={user?.email || ''} readOnly />
+                  <Input label="GitHub" value={user?.username || ''} readOnly />
+                </div>
+                <div className="flex justify-end">
+                  <Button onClick={handleSaveProfile} isLoading={saving} className="gap-2">Save Changes</Button>
+                </div>
+              </Card>
+
+              <Card className="border-red-500/10 bg-red-500/[0.02] space-y-4">
+                <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                  <Trash2 size={18} className="text-red-500" />
+                  Danger Zone
+                </h3>
+                <p className="text-sm text-[var(--text-secondary)]">Permanently delete your account and all associated data.</p>
+                <div className="flex gap-3">
+                  <Button variant="danger" className="gap-2"><Trash2 size={16} />Delete Account</Button>
+                  <Button variant="ghost" className="gap-2 text-red-400" onClick={logout}><LogOut size={16} />Sign Out</Button>
+                </div>
+              </Card>
+            </>
+          )}
+
+          {activeTab === 'ai-config' && (
+            <div className="space-y-6">
+              <Card className="border-white/5 bg-white/[0.01] space-y-6">
+                <div className="flex items-center gap-3">
+                  <Cpu size={20} className="text-[var(--accent-primary)]" />
+                  <h3 className="text-lg font-bold text-white">Default Model</h3>
+                </div>
+                <p className="text-sm text-[var(--text-secondary)]">Select the default AI agent to use for code analysis and responses.</p>
+                <div className="grid md:grid-cols-3 gap-4">
+                  {models.map((m) => (
+                    <button
+                      key={m.id}
+                      onClick={() => setSelectedModel(m.id)}
+                      className={cn(
+                        "flex flex-col text-left p-4 rounded-xl border transition-all duration-300",
+                        selectedModel === m.id
+                          ? "bg-[var(--accent-primary)]/10 border-[var(--accent-primary)]/40 ring-1 ring-[var(--accent-primary)]/40"
+                          : "bg-white/[0.02] border-white/5 hover:border-white/10 hover:bg-white/[0.04]"
+                      )}
+                    >
+                      <span className={cn(
+                        "text-sm font-bold mb-1",
+                        selectedModel === m.id ? "text-white" : "text-[var(--text-secondary)]"
+                      )}>{m.label}</span>
+                      <span className="text-[10px] text-[var(--text-muted)] leading-relaxed">{m.description}</span>
                     </button>
-                )}
-            </div>
-            <div>
-                <h3 className="text-2xl font-bold text-white leading-tight">{displayName}</h3>
-                <p className="text-[var(--text-secondary)]">
-                    {user.bio || 'Product Developer'} • <span className="text-[var(--text-muted)] italic">Personal Account</span>
-                </p>
-            </div>
-          </div>
-          {!isEditing ? (
-            <Button variant="secondary" size="sm" className="bg-white/5 border-white/10" onClick={() => setIsEditing(true)}>Edit Profile</Button>
-          ) : (
-            <div className="flex items-center gap-2">
-                <Badge variant="primary" className="animate-pulse">Editing Mode</Badge>
+                  ))}
+                </div>
+              </Card>
+              <MultiAIKeyBar 
+                keys={aiKeys}
+                onKeyChange={(id, value) => setAiKeys({ ...aiKeys, [id]: value })}
+                onSave={handleSaveKeys}
+                isSaving={saving}
+                hasSaved={keysSaved}
+              />
+              
+              <Card className="border-blue-500/10 bg-blue-500/[0.02] flex items-start gap-4">
+                <div className="p-2 rounded-lg bg-blue-500/10 mt-1">
+                  <Sparkles size={18} className="text-blue-400" />
+                </div>
+                <div>
+                  <h4 className="text-sm font-bold text-white">Model Routing</h4>
+                  <p className="text-xs text-[var(--text-secondary)] mt-1 leading-relaxed">
+                    Lynxis automatically routes requests to the most efficient model based on your provided keys. 
+                    If multiple keys are present, preference is given to <span className="text-white">Claude 3.5 Sonnet</span> for code analysis.
+                  </p>
+                </div>
+              </Card>
             </div>
           )}
-        </div>
 
-        <div className="grid gap-8 md:grid-cols-2">
-          <Input 
-            label="First Name" 
-            value={formData.firstName} 
-            onChange={(e) => setFormData({...formData, firstName: e.target.value})}
-            readOnly={!isEditing} 
-            placeholder="No first name set"
-            className={isEditing ? "focus:bg-white/[0.03]" : ""}
-          />
-          <Input 
-            label="Last Name" 
-            value={formData.lastName} 
-            onChange={(e) => setFormData({...formData, lastName: e.target.value})}
-            readOnly={!isEditing} 
-            placeholder="No last name set"
-            className={isEditing ? "focus:bg-white/[0.03]" : ""}
-          />
-          <div className="md:col-span-2">
-            <Input 
-              label="Email Address (Linked GitHub)" 
-              value={user.email || 'No email linked'} 
-              readOnly 
-              className="opacity-40 grayscale"
-            />
-          </div>
-          <div className="md:col-span-2">
-              <Input 
-                label="Professional Bio" 
-                value={formData.bio} 
-                onChange={(e) => setFormData({...formData, bio: e.target.value})}
-                placeholder="Write a brief bio about yourself..." 
-                readOnly={!isEditing}
-                className={isEditing ? "focus:bg-white/[0.03]" : ""}
-              />
-          </div>
+          {(activeTab !== 'profile' && activeTab !== 'ai-config') && (
+            <Card className="flex flex-col items-center justify-center py-20 text-center space-y-4 border-dashed border-white/10 bg-transparent">
+              <div className="p-4 rounded-full bg-white/5 text-white/20">
+                <Globe size={40} />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-white">{sections.find(s => s.id === activeTab)?.label} Coming Soon</h3>
+                <p className="text-sm text-[var(--text-muted)]">We're working hard to bring this feature to you.</p>
+              </div>
+            </Card>
+          )}
         </div>
-
-        {isEditing && (
-          <motion.div 
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="flex justify-end gap-3 pt-6 border-t border-white/5"
-          >
-              <Button variant="ghost" className="hover:bg-white/5" onClick={() => { setIsEditing(false); setFormData({ firstName: user.firstName || '', lastName: user.lastName || '', bio: user.bio || '' }); }}>Cancel</Button>
-              <Button className="gap-2 shadow-[0_0_30px_rgba(59,130,246,0.3)]" onClick={handleSave} isLoading={isSaving}>
-                <Save size={18} />
-                Save Changes
-              </Button>
-          </motion.div>
-        )}
-    </Card>
+      </div>
+    </div>
   );
 };
-
-const TeamSettings = () => (
-    <Card className="space-y-8 bg-white/[0.01] border-white/5 md:p-10">
-      <div className="flex items-center justify-between gap-6 pb-6 border-b border-white/5">
-        <div>
-          <h3 className="text-2xl font-bold text-white">Team Members</h3>
-          <p className="text-[var(--text-muted)]">Manage who has access to your reviews.</p>
-        </div>
-        <Button size="sm" className="gap-2" onClick={() => alert('Inviting team members is coming soon!')}>
-          <Plus size={16} />
-          Invite
-        </Button>
-      </div>
-      
-      <div className="space-y-1 py-10 text-center">
-        <Users size={40} className="mx-auto text-white/10 mb-4" />
-        <p className="text-[var(--text-muted)] italic">No team members found. Invite others to collaborate.</p>
-      </div>
-    </Card>
-);
-
-const IntegrationSettings = () => (
-    <div className="grid gap-6 md:grid-cols-2">
-      <IntegrationCard 
-        name="GitHub" 
-        icon={<Globe className="text-[#FFFFFF]" />} 
-        status="active" 
-        desc="Successfully connected. Syncing PRs and commit history."
-        color="#24292e"
-      />
-      <div className="md:col-span-2 p-8 rounded-2xl border border-dashed border-white/5 bg-white/[0.01] text-center">
-          <p className="text-[var(--text-muted)] italic text-sm">More integrations (Slack, Jira, etc.) are currently in development.</p>
-      </div>
-    </div>
-);
-
-const GovernanceSettings = () => {
-    const [showDeleteModal, setShowDeleteModal ] = useState(false);
-    const [twoFACode, setTwoFACode] = useState('');
-    const [isDeleting, setIsDeleting] = useState(false);
-
-    const handleDelete = async () => {
-        if (!/^\d{6}$/.test(twoFACode)) {
-            alert('Please enter a valid 6-digit confirmation code.');
-            return;
-        }
-        setIsDeleting(true);
-        try {
-            const res = await fetch('http://localhost:4003/api/users/me', {
-                method: 'DELETE',
-                credentials: 'include'
-            });
-            if (res.ok) {
-                window.location.href = '/login';
-            }
-        } catch (error) {
-            console.error('Failed to delete account:', error);
-        } finally {
-            setIsDeleting(false);
-        }
-    };
-
-    return (
-      <Card className="space-y-10 bg-white/[0.01] border-white/5 md:p-10">
-        <div className="space-y-2">
-          <h3 className="text-2xl font-bold text-white">Global Rules</h3>
-          <p className="text-[var(--text-muted)]">Configure enforcement levels for your workspace.</p>
-        </div>
-    
-        <div className="space-y-6">
-          <RuleToggle 
-            title="Require Multi-Review" 
-            desc="Primacy rule enforcing at least 2 manual approvals for core modules."
-            active={true}
-          />
-          <RuleToggle 
-            title="Block Security Dangers" 
-            desc="Automatically block merges if critical security risks are detected."
-            active={true}
-          />
-          <RuleToggle 
-            title="Lint Compliance" 
-            desc="Ensure all stylistic findings are resolved before merge."
-            active={false}
-          />
-        </div>
-    
-        <div className="p-6 rounded-2xl bg-[var(--danger)]/5 border border-[var(--danger)]/10 space-y-4">
-            <h4 className="font-bold text-[var(--danger)]">Danger Zone</h4>
-            <p className="text-sm text-[var(--text-muted)]">Deleting your account will permanently remove all review history, linked repositories, and personal data.</p>
-            <Button variant="danger" className="w-full" onClick={() => setShowDeleteModal(true)}>Delete Account</Button>
-        </div>
-
-        <AnimatePresence>
-            {showDeleteModal && (
-                <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-black/80 backdrop-blur-sm">
-                    <motion.div 
-                        initial={{ opacity: 0, scale: 0.9 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        exit={{ opacity: 0, scale: 0.9 }}
-                        className="w-full max-w-md glass p-8 rounded-3xl border-white/10 space-y-6"
-                    >
-                        <div className="space-y-2">
-                            <h3 className="text-2xl font-bold text-white">Confirm Deletion</h3>
-                            <p className="text-sm text-[var(--text-muted)]">This action is irreversible. Please enter the 2FA code sent to your email to proceed.</p>
-                        </div>
-
-                        <Input 
-                            label="2FA Code" 
-                            placeholder="Enter 123456" 
-                            value={twoFACode}
-                            onChange={(e) => setTwoFACode(e.target.value)}
-                        />
-
-                        <div className="flex gap-3 pt-4">
-                            <Button variant="ghost" className="flex-1" onClick={() => setShowDeleteModal(false)}>Cancel</Button>
-                            <Button variant="danger" className="flex-1" onClick={handleDelete} isLoading={isDeleting}>Confirm Delete</Button>
-                        </div>
-                    </motion.div>
-                </div>
-            )}
-        </AnimatePresence>
-      </Card>
-    );
-};
-
-const IntegrationCard = ({ name, icon, status, desc, color }: any) => (
-  <Card className="flex flex-col gap-6 bg-white/[0.01] border-white/5 hover:border-white/10">
-    <div className="flex items-center justify-between">
-      <div className="flex h-14 w-14 items-center justify-center rounded-2xl shadow-inner border border-white/5" style={{ backgroundColor: `${color}10` }}>
-        <div style={{ color: color }}>{icon}</div>
-      </div>
-      <Badge variant={status === 'active' ? 'success' : 'neutral'}>
-        {status}
-      </Badge>
-    </div>
-    <div className="space-y-2">
-      <h4 className="text-xl font-bold text-white tracking-tight">{name}</h4>
-      <p className="text-sm text-[var(--text-muted)] leading-relaxed">{desc}</p>
-    </div>
-    <Button variant="glass" className="w-full text-xs py-2 bg-white/5 border-white/5 hover:bg-white/10">
-      {status === 'active' ? 'Configure' : 'Enable'}
-    </Button>
-  </Card>
-);
-
-const RuleToggle = ({ title, desc, active }: any) => (
-  <div className="flex items-start justify-between gap-8 p-6 rounded-2xl bg-white/[0.01] border border-white/5 hover:bg-white/[0.02] transition-colors group cursor-pointer">
-    <div className="space-y-2">
-      <h4 className="font-bold text-white transition-colors group-hover:text-[var(--accent-primary)]">{title}</h4>
-      <p className="text-sm text-[var(--text-muted)] leading-relaxed">{desc}</p>
-    </div>
-    <div className={`h-6 w-11 rounded-full p-1 transition-all ${active ? 'bg-[var(--accent-primary)]' : 'bg-white/10'}`}>
-      <div className={`h-4 w-4 rounded-full bg-white shadow-lg transition-all ${active ? 'translate-x-5' : 'translate-x-0'}`} />
-    </div>
-  </div>
-);
 
 export default SettingsHome;

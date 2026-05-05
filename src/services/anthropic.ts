@@ -1,14 +1,23 @@
 import Anthropic from '@anthropic-ai/sdk';
 
-const apiKey = import.meta.env.VITE_ANTHROPIC_API_KEY;
+const getApiKey = () => {
+  const savedKeys = localStorage.getItem('lynxis_ai_keys');
+  if (savedKeys) {
+    const keys = JSON.parse(savedKeys);
+    if (keys.anthropic) return keys.anthropic;
+  }
+  return import.meta.env.VITE_ANTHROPIC_API_KEY;
+};
+
+const apiKey = getApiKey();
 
 if (!apiKey || apiKey === 'your_api_key_here') {
-  console.warn('Anthropic API key is missing or set to placeholder in .env');
+  console.warn('Anthropic API key is missing. Please add it in Settings.');
 }
 
 export const anthropic = new Anthropic({
   apiKey: apiKey || '',
-  dangerouslyAllowBrowser: true, // Required for client-side Vite apps
+  dangerouslyAllowBrowser: true,
 });
 
 export const analyzeCode = async (code: string, fileName: string) => {

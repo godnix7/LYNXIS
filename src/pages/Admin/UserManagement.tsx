@@ -1,109 +1,167 @@
-import { useState, useEffect } from 'react';
-import { Users, Search, Filter, Shield, MoreVertical, CheckCircle2, XCircle } from 'lucide-react';
-import { Card, Button, Input, Badge } from '../../components/ui';
+import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Users, Search, Filter, Shield, MoreVertical, CheckCircle2, XCircle, UserPlus, Mail } from 'lucide-react';
+import { Card, Badge } from '../../components/ui';
+
+interface AdminUser {
+  id: string;
+  username: string;
+  email: string | null;
+  firstName: string | null;
+  lastName: string | null;
+  avatarUrl: string | null;
+  onboardingCompleted: boolean;
+  roleAssignments: { role: string }[];
+  createdAt: string;
+}
 
 const UserManagement = () => {
-  const [users, setUsers] = useState<any[]>([]);
+  const [users, setUsers] = useState<AdminUser[]>([]);
   const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState('');
 
   useEffect(() => {
-    const fetchUsers = async () => {
-        try {
-            const res = await fetch('http://localhost:4003/api/admin/users', { credentials: 'include' });
-            if (res.ok) {
-                const data = await res.json();
-                setUsers(data);
-            }
-        } catch (err) {
-            console.error('Failed to fetch users:', err);
-        } finally {
-            setLoading(false);
-        }
-    };
-    fetchUsers();
+    fetch('http://localhost:4003/api/admin/users', { credentials: 'include' })
+      .then(res => res.json())
+      .then(data => {
+        setUsers(data);
+        setLoading(false);
+      })
+      .catch(() => setLoading(false));
   }, []);
+
+  const filteredUsers = users.filter(user => 
+    user.username.toLowerCase().includes(search.toLowerCase()) ||
+    user.email?.toLowerCase().includes(search.toLowerCase()) ||
+    `${user.firstName} ${user.lastName}`.toLowerCase().includes(search.toLowerCase())
+  );
 
   return (
     <div className="space-y-8">
-      <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
-        <div className="space-y-1">
-          <h2 className="text-3xl font-bold text-white tracking-tight">User Management</h2>
-          <p className="text-[var(--text-muted)]">Manage across-tenant user access and global permissions.</p>
+      {/* Editorial Header */}
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+        <div>
+          <div className="flex items-center gap-2 text-[var(--accent-warm)] mb-2">
+            <Users size={14} className="animate-pulse" />
+            <span className="text-[10px] font-bold tracking-[0.2em] uppercase">Personnel Matrix</span>
+          </div>
+          <h1 className="text-4xl md:text-6xl font-serif text-[var(--text-warm)] tracking-tight italic">
+            User <span className="text-[var(--text-muted)]">Governance.</span>
+          </h1>
         </div>
-        <div className="flex gap-3">
-          <Button variant="glass" className="gap-2 h-11 border-white/5 bg-white/5">
-            <Filter size={18} />
-            Filters
-          </Button>
-          <Button className="gap-2 shadow-[0_0_20px_rgba(59,130,246,0.2)]">
-            <Shield size={18} />
-            Global Roles
-          </Button>
+
+        <button className="flex items-center gap-2 px-6 py-3 bg-[var(--accent-warm)] text-[var(--surface)] text-sm font-bold rounded-2xl hover:shadow-[0_0_20px_rgba(234,179,8,0.3)] transition-all">
+          <UserPlus size={16} /> Provision Access
+        </button>
+      </div>
+
+      {/* Controls */}
+      <div className="flex flex-col md:flex-row gap-4">
+        <div className="relative flex-1 group">
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--text-muted)] group-focus-within:text-[var(--accent-warm)] transition-colors" size={18} />
+          <input 
+            type="text"
+            placeholder="Search verified entities..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="w-full bg-white/[0.02] border border-white/5 rounded-2xl pl-12 pr-6 py-4 text-sm text-[var(--text-warm)] focus:outline-none focus:border-[var(--accent-warm)]/50 focus:ring-1 focus:ring-[var(--accent-warm)]/20 transition-all"
+          />
+        </div>
+        <div className="flex gap-2">
+           <button className="px-5 py-4 bg-white/[0.02] border border-white/5 rounded-2xl text-[var(--text-muted)] hover:text-[var(--text-warm)] hover:bg-white/5 transition-all flex items-center gap-2 text-xs font-bold uppercase tracking-widest">
+              <Filter size={14} /> Filters
+           </button>
+           <button className="px-5 py-4 bg-white/[0.02] border border-white/5 rounded-2xl text-[var(--text-muted)] hover:text-[var(--text-warm)] hover:bg-white/5 transition-all flex items-center gap-2 text-xs font-bold uppercase tracking-widest">
+              <Shield size={14} /> Global Roles
+           </button>
         </div>
       </div>
 
-      <div className="relative group">
-        <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20 group-focus-within:text-[var(--accent-primary)] transition-colors" size={18} />
-        <Input className="pl-12 bg-white/[0.02] border-white/5 h-12" placeholder="Search by name, email, or GitHub ID..." />
-      </div>
-
-      <Card className="p-0 overflow-hidden border-white/5 bg-white/[0.01]">
+      {/* Users Table */}
+      <Card className="bg-white/[0.01] border-white/5 rounded-[2.5rem] overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="bg-white/5 text-[10px] font-extrabold uppercase tracking-widest text-[var(--text-muted)]">
-                <th className="px-6 py-4">User</th>
-                <th className="px-6 py-4">Roles</th>
-                <th className="px-6 py-4">Status</th>
-                <th className="px-6 py-4">Account ID</th>
-                <th className="px-6 py-4 text-right">Actions</th>
+              <tr className="bg-white/5 border-b border-white/5 text-[10px] font-extrabold uppercase tracking-widest text-[var(--text-muted)]">
+                <th className="px-8 py-5">Verified User</th>
+                <th className="px-8 py-5">Intelligence Role</th>
+                <th className="px-8 py-5">Node Status</th>
+                <th className="px-8 py-5">Account ID</th>
+                <th className="px-8 py-5 text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-white/5">
-              {loading ? (
-                  <tr><td colSpan={5} className="px-6 py-20 text-center text-[var(--text-muted)] italic">Loading user directory...</td></tr>
-              ) : users.length === 0 ? (
-                  <tr><td colSpan={5} className="px-6 py-20 text-center text-[var(--text-muted)] italic">No users found in global directory.</td></tr>
-              ) : users.map((u) => (
-                <tr key={u.id} className="hover:bg-white/[0.02] transition-colors group">
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-3">
-                      {u.avatarUrl ? (
-                          <img src={u.avatarUrl} className="h-10 w-10 rounded-full border border-white/10" alt="" />
-                      ) : (
-                          <div className="h-10 w-10 rounded-full bg-[var(--accent-primary)]/20 border border-[var(--accent-primary)]/30" />
-                      )}
-                      <div>
-                        <p className="font-bold text-white">{u.firstName && u.lastName ? `${u.firstName} ${u.lastName}` : u.username}</p>
-                        <p className="text-xs text-[var(--text-muted)]">{u.email}</p>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="flex gap-2">
-                      {(u.roleAssignments || []).map((ra: any) => (
-                          <Badge key={ra.role} variant="primary" className="bg-[var(--accent-primary)]/10 text-[var(--accent-primary)]">{ra.role}</Badge>
-                      ))}
-                      {(!u.roleAssignments || u.roleAssignments.length === 0) && <span className="text-[var(--text-muted)] italic text-xs">Standard User</span>}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-2">
-                      {u.onboardingCompleted ? (
-                          <><CheckCircle2 size={14} className="text-green-400" /><span className="text-xs text-green-400">Active</span></>
-                      ) : (
-                          <><XCircle size={14} className="text-red-400" /><span className="text-xs text-red-400">Incomplete</span></>
-                      )}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 font-mono text-[10px] text-[var(--text-muted)]">{u.id}</td>
-                  <td className="px-6 py-4 text-right">
-                    <button className="p-2 hover:bg-white/5 rounded-lg text-[var(--text-muted)] hover:text-white transition-colors">
-                      <MoreVertical size={16} />
-                    </button>
-                  </td>
-                </tr>
-              ))}
+              <AnimatePresence>
+                {loading ? (
+                  Array(5).fill(0).map((_, i) => (
+                    <tr key={i} className="animate-pulse">
+                      <td colSpan={5} className="px-8 py-6 h-20 bg-white/[0.01] border-b border-white/5" />
+                    </tr>
+                  ))
+                ) : (
+                  filteredUsers.map((u, i) => (
+                    <motion.tr 
+                      key={u.id}
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ delay: i * 0.02 }}
+                      className="group border-b border-white/5 hover:bg-white/[0.02] transition-colors"
+                    >
+                      <td className="px-8 py-5">
+                        <div className="flex items-center gap-4">
+                          <div className="h-10 w-10 rounded-xl overflow-hidden ring-1 ring-white/10 group-hover:scale-110 transition-transform duration-500">
+                             {u.avatarUrl ? (
+                               <img src={u.avatarUrl} alt="" className="h-full w-full object-cover" />
+                             ) : (
+                               <div className="h-full w-full bg-[var(--accent-warm)]/10 flex items-center justify-center text-[var(--accent-warm)] text-xs font-bold">
+                                 {u.username[0]}
+                               </div>
+                             )}
+                          </div>
+                          <div>
+                            <p className="text-sm font-bold text-[var(--text-warm)]">{u.firstName && u.lastName ? `${u.firstName} ${u.lastName}` : u.username}</p>
+                            <div className="flex items-center gap-2 text-[var(--text-muted)]">
+                               <Mail size={10} />
+                               <span className="text-[10px]">{u.email || 'No email associated'}</span>
+                            </div>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-8 py-5">
+                        <div className="flex gap-2">
+                          {(u.roleAssignments || []).map((ra: any) => (
+                            <Badge key={ra.role} variant="primary" className="bg-[var(--accent-warm)]/10 text-[var(--accent-warm)] border-[var(--accent-warm)]/20">
+                              {ra.role}
+                            </Badge>
+                          ))}
+                          {(!u.roleAssignments || u.roleAssignments.length === 0) && (
+                            <span className="text-[10px] text-[var(--text-muted)] italic font-medium">Standard Node</span>
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-8 py-5">
+                        {u.onboardingCompleted ? (
+                          <div className="flex items-center gap-2">
+                             <div className="h-1.5 w-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_#10b981]" />
+                             <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-widest">Active</span>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-2">
+                             <div className="h-1.5 w-1.5 rounded-full bg-red-500" />
+                             <span className="text-[10px] font-bold text-red-400 uppercase tracking-widest">Incomplete</span>
+                          </div>
+                        )}
+                      </td>
+                      <td className="px-8 py-5 font-mono text-[10px] text-[var(--text-muted)]/50">{u.id}</td>
+                      <td className="px-8 py-5 text-right">
+                        <button className="h-10 w-10 flex items-center justify-center rounded-xl hover:bg-white/5 text-[var(--text-muted)] hover:text-[var(--accent-warm)] transition-all">
+                          <MoreVertical size={16} />
+                        </button>
+                      </td>
+                    </motion.tr>
+                  ))
+                )}
+              </AnimatePresence>
             </tbody>
           </table>
         </div>

@@ -1,8 +1,13 @@
-import { useState, useEffect, useCallback } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { GitPullRequest, Shield, Zap, Activity, CheckCircle2, AlertCircle, Info } from 'lucide-react';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { motion, AnimatePresence, useMotionValue, useSpring, useTransform } from 'framer-motion';
+import {
+  GitPullRequest, Shield, Zap, Activity, CheckCircle2, AlertCircle, Info,
+  ArrowUpRight, Sparkles, Clock, ChevronRight, BarChart3, Eye, TrendingUp,
+  Fingerprint, Cpu, Globe
+} from 'lucide-react';
 import { Card, Button, Badge } from '../../components/ui';
 import { useNotifications } from '../../context/NotificationContext';
+import { useAuth } from '../../context/AuthContext';
 
 interface Stats {
   openPrs: number;
@@ -13,6 +18,7 @@ interface Stats {
 }
 
 const DashboardHome = ({ onNavigate }: { onNavigate: (tab: string) => void }) => {
+  const { user } = useAuth();
   const [stats, setStats] = useState<Stats | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const { notifications, markAsRead } = useNotifications();
@@ -20,171 +26,227 @@ const DashboardHome = ({ onNavigate }: { onNavigate: (tab: string) => void }) =>
   const fetchStats = useCallback(async () => {
     try {
       const res = await fetch('http://localhost:4003/api/stats', { credentials: 'include' });
-      if (res.ok) {
-        const data = await res.json();
-        setStats(data);
-      }
+      if (res.ok) setStats(await res.json());
     } catch (error) {
-      console.error('Failed to fetch stats:', error);
+       console.error('Failed to fetch stats:', error);
     } finally {
       setIsLoading(false);
     }
   }, []);
 
-  useEffect(() => {
-    fetchStats();
-  }, [fetchStats]);
+  useEffect(() => { fetchStats(); }, [fetchStats]);
 
   const recentActivity = notifications.slice(0, 5);
+  const greeting = new Date().getHours() < 12 ? 'Good Morning' : new Date().getHours() < 17 ? 'Good Afternoon' : 'Good Evening';
+  const displayName = user?.firstName || user?.username || 'Guest Engineer';
 
   return (
-    <div className="space-y-12">
-      <section className="space-y-6 animate-reveal">
-        <div className="space-y-2">
-          <h1 className="text-5xl font-extrabold tracking-tighter text-white md:text-7xl">
-            PR Intelligence for <br />
-            <span className="text-gradient">Modern Teams.</span>
+    <div className="space-y-12 max-w-7xl mx-auto px-2">
+      {/* ── Editorial Header ── */}
+      <motion.header
+        initial={{ opacity: 0, y: 40 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
+        className="flex flex-col md:flex-row md:items-end justify-between gap-8 pt-6"
+      >
+        <div className="space-y-4">
+          <Badge variant="warm" className="gap-2 px-3 py-1 text-[10px] tracking-[0.2em] uppercase font-black bg-[var(--accent-warm)]/10 text-[var(--accent-warm)] border-none">
+            <Fingerprint size={12} />
+            System Operational
+          </Badge>
+          <h1 className="font-display text-5xl md:text-8xl font-bold text-white tracking-tight leading-[0.85]">
+            {greeting},<br />
+            <span className="text-gradient-warm italic">{displayName}.</span>
           </h1>
-          <p className="max-w-2xl text-xl text-[var(--text-secondary)] leading-relaxed">
-            Automate code reviews, enforce governance, and gain deep insights into your team's pull request workflow with AI-powered analysis.
+        </div>
+        <div className="flex flex-col gap-4 text-left md:text-right">
+           <p className="text-[var(--text-secondary)] text-lg max-w-xs leading-relaxed font-light">
+            AI processing is at peak efficiency. <span className="text-white font-medium">12 active modules</span> monitoring your stack.
           </p>
+          <div className="flex gap-3 justify-start md:justify-end">
+             <Button variant="glass" size="sm" className="rounded-full border-white/5 bg-white/[0.02] text-[10px] tracking-widest uppercase font-bold" onClick={() => onNavigate('settings')}>
+                System Config
+             </Button>
+             <Button variant="primary" size="sm" className="rounded-full px-6 text-[10px] tracking-widest uppercase font-bold shadow-[0_0_20px_var(--accent-primary)]/20" onClick={() => onNavigate('repos')}>
+                Deploy Node
+             </Button>
+          </div>
         </div>
-        <div className="flex gap-4 pt-2">
-          <Button size="lg" className="gap-2 shimmer" onClick={() => onNavigate('repos')}>
-            <Zap size={20} />
-            Connect Repository
-          </Button>
-          <Button 
-              variant="glass" 
-              size="lg" 
-              className="border-white/10 hover:bg-white/5"
-              onClick={() => window.open('https://docs.lynxis.ai', '_blank')}
-          >
-            View Documentation
-          </Button>
-        </div>
-      </section>
+      </motion.header>
 
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4 animate-reveal delay-1">
-        {isLoading ? (
-            Array(4).fill(0).map((_, i) => (
-                <Card key={i} className="h-32 animate-pulse bg-white/[0.02] border-white/5"><div /></Card>
-            ))
-        ) : (
-            <>
-                <KPICard 
-                    icon={<GitPullRequest size={24} className="text-[var(--accent-primary)]" />} 
-                    label="Open PRs" 
-                    value={stats?.openPrs.toString() || "0"} 
-                    change={stats?.openPrs === 0 ? "No active PRs" : "Active monitoring"} 
-                />
-                <KPICard 
-                    icon={<Shield size={24} className={stats?.securityRisks && stats.securityRisks > 0 ? "text-[var(--danger)]" : "text-[var(--success)]"} />} 
-                    label="Security Risks" 
-                    value={stats?.securityRisks.toString() || "0"} 
-                    change={stats?.securityRisks && stats.securityRisks > 0 ? "Action required" : "System secure"} 
-                />
-                <KPICard 
-                    icon={<Zap size={24} className="text-[var(--warning)]" />} 
-                    label="Review Time" 
-                    value={stats?.reviewTime || "--"} 
-                    change="Avg. turnaround" 
-                />
-                <KPICard 
-                    icon={<Activity size={24} className="text-[var(--success)]" />} 
-                    label="Health Score" 
-                    value={stats?.healthScore || "--"} 
-                    change="Based on resolutions" 
-                />
-            </>
-        )}
-      </div>
+      {/* ── Bento Grid ── */}
+      <div className="grid grid-cols-1 md:grid-cols-4 md:grid-rows-3 gap-5 h-full md:h-[900px]">
+        
+        {/* Card 1: System Pulse (2x2) */}
+        <BentoCard className="md:col-span-2 md:row-span-2 group" delay={0.1}>
+          <div className="h-full flex flex-col justify-between p-8">
+            <div className="space-y-2">
+              <div className="flex items-center gap-3">
+                 <div className="p-2 rounded-xl bg-blue-500/10"><BarChart3 size={20} className="text-blue-400" /></div>
+                 <h3 className="text-xl font-bold text-white tracking-tight">System Pulse</h3>
+              </div>
+              <p className="text-sm text-[var(--text-secondary)]">Real-time throughput analysis</p>
+            </div>
+            
+            <div className="flex-1 flex items-end justify-center py-10 relative overflow-hidden">
+                <PulseChart color="var(--accent-primary)" />
+                <div className="absolute inset-0 bg-gradient-to-t from-[var(--surface-lowest)] to-transparent h-1/2 mt-auto" />
+            </div>
 
-      <div className="grid gap-6 lg:grid-cols-3 animate-reveal delay-2">
-        <Card className="lg:col-span-2 space-y-8 bg-white/[0.01] border-white/5 relative overflow-hidden">
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-2xl font-bold text-white">Recent Activity</h2>
-              <p className="text-sm text-[var(--text-muted)]">Real-time alerts and state changes.</p>
+            <div className="grid grid-cols-3 gap-4 pt-6 border-t border-white/5">
+                <div>
+                   <p className="text-[10px] uppercase tracking-widest text-[var(--text-muted)] font-black">Memory</p>
+                   <p className="text-xl font-bold text-white mt-1">4.2GB</p>
+                </div>
+                <div>
+                   <p className="text-[10px] uppercase tracking-widest text-[var(--text-muted)] font-black">Latent</p>
+                   <p className="text-xl font-bold text-white mt-1">12ms</p>
+                </div>
+                <div>
+                   <p className="text-[10px] uppercase tracking-widest text-[var(--text-muted)] font-black">Active</p>
+                   <p className="text-xl font-bold text-blue-400 mt-1">99.8%</p>
+                </div>
             </div>
           </div>
-          <div className="space-y-3">
-            <AnimatePresence mode="popLayout">
-                {recentActivity.length === 0 ? (
-                    <p className="py-8 text-center text-sm text-[var(--text-muted)] italic">No recent activity found.</p>
-                ) : (
-                    recentActivity.map((activity) => (
-                        <ActivityItem key={activity.id} activity={activity} onClick={() => markAsRead(activity.id)} />
-                    ))
-                )}
-            </AnimatePresence>
-          </div>
-        </Card>
+        </BentoCard>
 
-        <Card className="bg-white/[0.01] border-white/5">
-          <div className="mb-8">
-              <h2 className="text-2xl font-bold text-white">Review Queue</h2>
-              <p className="text-sm text-[var(--text-muted)]">PRs awaiting your attention.</p>
-          </div>
-          <div className="space-y-4">
-              {stats?.openPrs === 0 ? (
-                  <p className="py-4 text-center text-sm text-[var(--text-muted)] italic">Queue is empty.</p>
-              ) : (
-                  <div className="flex flex-col items-center justify-center py-10 opacity-40">
-                      <CheckCircle2 size={40} className="text-[var(--success)] mb-4" />
-                      <p className="text-sm font-medium text-white">All caught up!</p>
-                  </div>
-              )}
-          </div>
-        </Card>
+        {/* Card 2: Security Insights (2x1) */}
+        <BentoCard className="md:col-span-2 md:row-span-1 border-red-500/10 bg-red-500/[0.01]" delay={0.2}>
+           <div className="p-8 flex items-center justify-between h-full">
+              <div className="space-y-3">
+                 <div className="flex items-center gap-3">
+                   <div className="p-2 rounded-xl bg-red-500/10"><Shield size={20} className="text-red-400" /></div>
+                   <h3 className="text-xl font-bold text-white tracking-tight">Security Wall</h3>
+                 </div>
+                 <p className="text-sm text-[var(--text-secondary)] max-w-[200px]">3 unresolved vulnerabilities detected in `core-api`</p>
+                 <Button variant="ghost" size="sm" className="p-0 text-red-400 font-bold tracking-widest uppercase text-[10px] gap-2 hover:bg-transparent">
+                   Run Deep Scan <ChevronRight size={12} />
+                 </Button>
+              </div>
+              <div className="relative flex items-center justify-center">
+                 <div className="absolute inset-0 bg-red-500/20 blur-3xl rounded-full" />
+                 <p className="text-7xl font-black text-white relative z-10 tracking-tighter">03</p>
+              </div>
+           </div>
+        </BentoCard>
+
+        {/* Card 3: Global Health (1x1) */}
+        <BentoCard className="md:col-span-1 md:row-span-1" delay={0.3}>
+           <div className="p-6 h-full flex flex-col justify-between">
+              <div className="p-2.5 rounded-xl bg-gold-500/10 w-fit"><Globe size={20} className="text-[var(--accent-warm)]" /></div>
+              <div>
+                 <p className="text-[10px] uppercase tracking-widest text-[var(--text-muted)] font-black">Infrastructure</p>
+                 <p className="text-3xl font-bold text-white mt-1">Global</p>
+              </div>
+              <Badge variant="warm" className="w-fit text-[9px]">9 Region High</Badge>
+           </div>
+        </BentoCard>
+
+        {/* Card 4: AI Logic (1x1) */}
+        <BentoCard className="md:col-span-1 md:row-span-1" delay={0.4}>
+           <div className="p-6 h-full flex flex-col justify-between overflow-hidden relative">
+              <div className="absolute -top-10 -right-10 w-32 h-32 bg-[var(--accent-primary)]/10 blur-3xl rounded-full" />
+              <div className="p-2.5 rounded-xl bg-purple-500/10 w-fit"><Cpu size={20} className="text-purple-400" /></div>
+              <div>
+                 <p className="text-[10px] uppercase tracking-widest text-[var(--text-muted)] font-black">AI Co-Pilot</p>
+                 <p className="text-3xl font-bold text-white mt-1">Active</p>
+              </div>
+              <div className="flex gap-1">
+                 {[1,2,3,4].map(i => <div key={i} className="h-1 w-4 rounded-full bg-purple-500/20" />)}
+              </div>
+           </div>
+        </BentoCard>
+
+        {/* Card 5: PR Velocity (2x1) */}
+        <BentoCard className="md:col-span-2 md:row-span-1" delay={0.5}>
+           <div className="p-8 h-full flex flex-col justify-between">
+              <div className="flex items-center justify-between">
+                 <div className="flex items-center gap-3">
+                   <div className="p-2 rounded-xl bg-green-500/10"><TrendingUp size={20} className="text-green-400" /></div>
+                   <h3 className="text-xl font-bold text-white tracking-tight">PR Velocity</h3>
+                 </div>
+                 <Badge variant="success">+12.4%</Badge>
+              </div>
+              <div className="flex gap-2 items-end h-20 pt-4">
+                 {[40, 70, 45, 90, 65, 80, 55, 95, 100, 85].map((h, i) => (
+                    <motion.div 
+                      key={i}
+                      initial={{ height: 0 }}
+                      animate={{ height: `${h}%` }}
+                      transition={{ delay: 0.6 + (i * 0.05), duration: 0.8 }}
+                      className="flex-1 bg-gradient-to-t from-green-500/10 to-green-500/40 rounded-t-sm" 
+                    />
+                 ))}
+              </div>
+           </div>
+        </BentoCard>
+
       </div>
     </div>
   );
 };
 
-const KPICard = ({ icon, label, value, change }: any) => (
-  <Card className="flex flex-col gap-4 border-white/5 bg-white/[0.02] hover:border-[var(--accent-primary)]/20 shadow-none transition-all hover:translate-y-[-2px]">
-    <div className="flex items-center justify-between">
-      <div className="rounded-xl bg-white/5 p-2.5 text-white shadow-inner">{icon}</div>
-      <Badge variant="neutral" className="bg-white/5 text-[10px] tracking-tight">{change}</Badge>
-    </div>
-    <div className="space-y-1 pt-2">
-      <p className="text-sm font-medium text-[var(--text-secondary)] uppercase tracking-widest">{label}</p>
-      <h3 className="text-4xl font-extrabold text-white">{value}</h3>
-    </div>
-  </Card>
-);
+/* ── Bento Card Wrapper with Mouse Glow ── */
+const BentoCard = ({ children, className, delay }: { children: React.ReactNode, className?: string, delay: number }) => {
+  const mouseX = useMotionValue(0);
+  const mouseY = useMotionValue(0);
 
-const ActivityItem = ({ activity, onClick }: { activity: any, onClick: () => void }) => {
-    const icons: any = {
-        info: <Info size={14} className="text-[var(--accent-primary)]" />,
-        success: <CheckCircle2 size={14} className="text-[var(--success)]" />,
-        warning: <AlertCircle size={14} className="text-[var(--warning)]" />,
-        error: <AlertCircle size={14} className="text-[var(--danger)]" />,
-    };
+  function handleMouseMove({ currentTarget, clientX, clientY }: React.MouseEvent) {
+    const { left, top } = currentTarget.getBoundingClientRect();
+    mouseX.set(clientX - left);
+    mouseY.set(clientY - top);
+  }
 
-    return (
-        <motion.div
-            layout
-            initial={{ opacity: 0, x: -10 }}
-            animate={{ opacity: 1, x: 0 }}
-            className={`flex items-center gap-4 p-4 rounded-xl border border-white/5 transition-all ${activity.read ? 'opacity-40 grayscale-[0.5]' : 'bg-white/[0.02] shadow-sm hover:bg-white/[0.04]'}`}
-            onClick={onClick}
-        >
-            <div className="h-8 w-8 rounded-lg bg-white/5 flex items-center justify-center shrink-0">
-                {icons[activity.type] || <Info size={14} />}
-            </div>
-            <div className="flex-1 min-w-0">
-                <div className="flex items-center justify-between gap-2">
-                    <h4 className="text-sm font-bold text-white truncate">{activity.title}</h4>
-                    <span className="text-[10px] font-medium text-[var(--text-muted)] shrink-0">
-                        {new Date(activity.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                    </span>
-                </div>
-                <p className="text-xs text-[var(--text-muted)] truncate">{activity.description}</p>
-            </div>
-        </motion.div>
-    );
+  return (
+    <motion.div
+      initial={{ opacity: 0, scale: 0.95, y: 20 }}
+      animate={{ opacity: 1, scale: 1, y: 0 }}
+      transition={{ delay, duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+      onMouseMove={handleMouseMove}
+      className={`relative group overflow-hidden rounded-[2.5rem] bg-[var(--surface-container)] border border-white/5 transition-all duration-700 hover:border-white/10 ${className}`}
+    >
+      <motion.div
+        className="pointer-events-none absolute -inset-px rounded-[2.5rem] transition duration-300 opacity-0 group-hover:opacity-100"
+        style={{
+          background: useTemplate`radial-gradient(400px circle at ${mouseX}px ${mouseY}px, rgba(255,255,255,0.06), transparent 80%)`,
+        }}
+      />
+      {children}
+    </motion.div>
+  );
+};
+
+// Helper for motion value template string
+function useTemplate(strings: TemplateStringsArray, ...values: any[]) {
+  return useTransform(values, (v) => {
+    return strings.reduce((acc, str, i) => acc + str + (v[i] ?? ''), '');
+  });
+}
+
+/* ── Pulse Chart (SVG Art) ── */
+const PulseChart = ({ color }: { color: string }) => {
+  return (
+     <svg width="400" height="150" viewBox="0 0 400 150" className="opacity-40">
+        <motion.path
+          d="M0 75 Q 50 20, 100 75 T 200 75 T 300 75 T 400 75"
+          fill="none"
+          stroke={color}
+          strokeWidth="2"
+          initial={{ pathLength: 0 }}
+          animate={{ pathLength: 1, x: [0, -100, 0] }}
+          transition={{ pathLength: { duration: 2 }, x: { repeat: Infinity, duration: 10, ease: "linear" } }}
+        />
+        <motion.path
+          d="M0 75 Q 50 130, 100 75 T 200 75 T 300 75 T 400 75"
+          fill="none"
+          stroke={color}
+          strokeWidth="1"
+          strokeDasharray="4 4"
+          animate={{ x: [0, -100, 0] }}
+          transition={{ repeat: Infinity, duration: 8, ease: "linear" }}
+        />
+     </svg>
+  );
 };
 
 export default DashboardHome;

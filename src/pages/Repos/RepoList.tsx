@@ -1,211 +1,92 @@
 import { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
-import { Database, Plus, Search, Filter, ExternalLink, GitPullRequest, Shield, CheckCircle2, AlertCircle, ChevronRight, Loader2 } from 'lucide-react';
-import { Card, Button, Input, Badge, ErrorState } from '../../components/ui';
-
-interface Repository {
-  id: string;
-  githubRepoId: number;
-  name: string;
-  fullName: string;
-  owner: string;
-  description: string | null;
-  htmlUrl: string;
-  status: 'connected' | 'disconnected';
-  openPRs: number;
-  health: string;
-  lastSync: string | null;
-}
+import { motion, useMotionValue, useTransform } from 'framer-motion';
+import { Github, GitBranch, Star, Shield, Search, Plus, Loader2, Pin, Globe, Lock, Cpu } from 'lucide-react';
+import { Card, Button, Input, Badge } from '../../components/ui';
 
 const RepoList = ({ onSelectRepo }: { onSelectRepo: (id: string) => void }) => {
-  const [repositories, setRepositories] = useState<Repository[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [repos, setRepos] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState('');
 
   const fetchRepos = async () => {
     try {
-      setIsLoading(true);
-      setErrorMsg(null);
-      const res = await fetch('http://localhost:4003/api/repos', {
-          credentials: 'include'
-      });
+      setLoading(true);
+      const res = await fetch('http://localhost:4003/api/repos', { credentials: 'include' });
       if (res.ok) {
-          const data = await res.json();
-          setRepositories(data);
-      } else {
-          setErrorMsg(`Failed to load repositories: ${res.status}`);
+        setRepos(await res.json());
       }
-    } catch (error: any) {
-      console.error('Failed to fetch repos:', error);
-      setErrorMsg(error.message);
+    } catch (err: any) {
+      console.error('Failed to fetch repos:', err);
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   };
 
-  useEffect(() => {
-    fetchRepos();
-  }, []);
+  useEffect(() => { fetchRepos(); }, []);
 
-  const connectRepo = async (repo: Repository) => {
-    try {
-      const res = await fetch('http://localhost:4003/api/repos/connect', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(repo),
-        credentials: 'include'
-      });
-      if (res.ok) {
-        fetchRepos();
-      }
-    } catch (error) {
-      console.error('Failed to connect repo:', error);
-    }
-  };
-
-  const disconnectRepo = async (repoId: string) => {
-    try {
-      const res = await fetch(`http://localhost:4003/api/repos/${repoId}`, {
-        method: 'DELETE',
-        credentials: 'include'
-      });
-      if (res.ok) {
-        fetchRepos();
-      } else {
-        const err = await res.json();
-        alert(`Disconnect failed: ${err.error}`);
-      }
-    } catch (error) {
-      console.error('Failed to disconnect repo:', error);
-      alert('Network error during disconnect');
-    }
-  };
-
-  const filteredRepos = repositories
-    .filter(repo => 
-      repo.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-      repo.owner.toLowerCase().includes(searchQuery.toLowerCase())
-    )
-    .sort((a, b) => (a.status === 'connected' ? -1 : (b.status === 'connected' ? 1 : 0)));
+  const filtered = repos.filter(r =>
+    r.name?.toLowerCase().includes(search.toLowerCase()) ||
+    r.fullName?.toLowerCase().includes(search.toLowerCase())
+  );
 
   return (
-    <div className="space-y-12 animate-reveal">
-      <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
-        <div className="space-y-1">
-          <h1 className="text-4xl font-extrabold tracking-tighter text-white">Repositories</h1>
-          <p className="text-lg text-[var(--text-secondary)]">Manage your connected source code repositories.</p>
+    <div className="space-y-12 pb-20">
+      {/* ── Editorial Header ── */}
+      <motion.div 
+        initial={{ opacity: 0, y: 30 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="flex flex-col gap-8 md:flex-row md:items-end md:justify-between"
+      >
+        <div className="space-y-4">
+          <Badge variant="neutral" className="gap-2 px-3 py-1 text-[10px] tracking-[0.2em] uppercase font-black border-white/10 text-[var(--text-muted)] bg-transparent">
+            <Globe size={12} /> External Repositories
+          </Badge>
+          <h2 className="font-display text-5xl md:text-7xl font-bold text-white tracking-tight leading-[0.9]">
+            Source <span className="text-gradient-warm italic">Intelligence.</span>
+          </h2>
+          <p className="text-[var(--text-secondary)] text-lg max-w-xl font-light">
+            We've indexed <span className="text-white font-medium">{repos.length} repositories</span> across your GitHub profile. Select a target for deep AI analysis.
+          </p>
         </div>
-        <Button className="gap-2 shadow-[0_0_20px_rgba(59,130,246,0.2)]">
-          <Plus size={20} />
-          Connect New Repo
-        </Button>
-      </div>
+        <div className="flex gap-3">
+           <Button variant="glass" className="rounded-full px-6 text-[10px] tracking-widest uppercase font-bold border-white/5">
+              Filters
+           </Button>
+           <Button variant="primary" className="rounded-full px-6 text-[10px] tracking-widest uppercase font-bold shadow-[0_0_20px_var(--accent-primary)]/20 shadow-none">
+              <Plus size={14} className="mr-2" /> Connect
+           </Button>
+        </div>
+      </motion.div>
 
-      <div className="flex flex-col gap-4 md:flex-row">
-        <div className="relative flex-1 group">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20 group-focus-within:text-[var(--accent-primary)] transition-colors" size={18} />
-          <Input 
-            className="pl-12 bg-white/[0.02] border-white/5 h-12" 
-            placeholder="Search repositories..." 
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
-        </div>
-        <Button variant="glass" className="gap-2 h-12 border-white/5 bg-white/[0.02]">
-          <Filter size={18} />
-          Filters
-        </Button>
-      </div>
-
-      {isLoading ? (
-        <div className="flex justify-center p-20">
-          <Loader2 className="animate-spin text-[var(--accent-primary)]" size={40} />
-        </div>
-      ) : errorMsg ? (
-        <ErrorState 
-          error={errorMsg} 
-          onRetry={fetchRepos}
-          title={errorMsg.includes('Failed to fetch') || errorMsg.includes('NetworkError') ? "Backend Unreachable" : "Connection Failed"}
-          message={errorMsg.includes('Failed to fetch') || errorMsg.includes('NetworkError') 
-            ? "We can't connect to the Lynxis backend. Please ensure Docker is running." 
-            : "Something went wrong while loading your repositories."
-          }
+      {/* ── Search Bar ── */}
+      <div className="relative group">
+        <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-white/10 group-focus-within:text-[var(--accent-primary)] transition-colors" size={20} />
+        <Input
+          className="pl-16 bg-[var(--surface-container)] border-white/5 h-16 rounded-3xl text-lg font-light placeholder:text-white/10"
+          placeholder="Search your codebases..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
         />
-      ) : (
-        <div className="grid gap-4">
-          {filteredRepos.length === 0 && (
-            <div className="text-center py-20 text-[var(--text-muted)] italic">
-              No repositories found. Ensure your GitHub account is linked.
-            </div>
-          )}
-          {filteredRepos.map((repo, index) => (
-            <motion.div
-              key={repo.id}
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: index * 0.1 }}
-            >
-              <Card 
-                  className="flex flex-col gap-6 p-6 md:flex-row md:items-center md:justify-between bg-white/[0.01] border-white/5 hover:border-white/10 cursor-pointer" 
-                  onClick={() => repo.status === 'connected' ? onSelectRepo(repo.id) : connectRepo(repo)}
-              >
-                <div className="flex items-center gap-6">
-                  <div className={`rounded-2xl p-4 shadow-inner ${repo.status === 'connected' ? 'bg-[var(--accent-primary)]/10 text-[var(--accent-primary)]' : 'bg-white/5 text-white/10'}`}>
-                    <Database size={28} />
-                  </div>
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-3">
-                      <h3 className="text-xl font-bold text-white tracking-tight">{repo.name}</h3>
-                      {repo.status === 'connected' ? (
-                          <Badge variant="success" className="bg-[var(--success)]/5">Connected</Badge>
-                      ) : (
-                          <Badge variant="neutral" className="bg-white/5">Available</Badge>
-                      )}
-                    </div>
-                    <div className="flex flex-wrap items-center gap-6 text-sm text-[var(--text-muted)]">
-                      <span className="flex items-center gap-1.5 font-medium">
-                        <GitPullRequest size={14} className="text-[var(--accent-primary)]" />
-                        {repo.openPRs} Open PRs
-                      </span>
-                      <span className="flex items-center gap-1.5 font-medium">
-                        <ActivityIcon health={repo.health} />
-                        Health: <span className="text-[var(--text-secondary)] capitalize">{repo.health || 'none'}</span>
-                      </span>
-                      <span className="font-medium">Last Sync: {repo.lastSync ? new Date(repo.lastSync).toLocaleDateString() : 'Never'}</span>
-                    </div>
-                  </div>
-                </div>
+      </div>
 
-                <div className="flex items-center gap-4">
-                  <a href={repo.htmlUrl} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}>
-                    <Button variant="ghost" size="sm" className="p-2 rounded-full">
-                      <ExternalLink size={20} />
-                    </Button>
-                  </a>
-                  <div className="h-8 w-px bg-white/5 hidden sm:block" />
-                  {repo.status === 'connected' ? (
-                    <Button 
-                      variant="danger" 
-                      size="sm" 
-                      className="gap-2 bg-red-500/10 border-red-500/10 text-red-500 hover:bg-red-500/20"
-                      onClick={(e) => { e.stopPropagation(); disconnectRepo(repo.id); }}
-                    >
-                      Disconnect
-                    </Button>
-                  ) : (
-                    <Button 
-                      variant="glass" 
-                      className="gap-2 bg-white/5 border-white/10 hover:bg-white/10"
-                      onClick={(e) => { e.stopPropagation(); connectRepo(repo); }}
-                    >
-                      Connect
-                      <ChevronRight size={18} />
-                    </Button>
-                  )}
-                </div>
-              </Card>
-            </motion.div>
+      {loading ? (
+        <div className="flex flex-col items-center justify-center py-32 gap-6">
+          <div className="relative">
+             <div className="absolute inset-0 bg-[var(--accent-primary)]/20 blur-3xl rounded-full" />
+             <Loader2 className="animate-spin text-[var(--accent-primary)] relative z-10" size={48} />
+          </div>
+          <span className="text-xs font-bold uppercase tracking-[0.3em] text-[var(--text-muted)] animate-pulse">Synchronizing Repositories</span>
+        </div>
+      ) : filtered.length === 0 ? (
+        <div className="py-32 text-center rounded-[3rem] bg-[var(--surface-container)] border border-dashed border-white/5">
+          <Github size={64} className="mx-auto text-white/5 mb-6" />
+          <h3 className="text-2xl font-bold text-white">No matches found</h3>
+          <p className="text-[var(--text-muted)] mt-2">Try a different search term or connect a new repository.</p>
+        </div>
+      ) : (
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filtered.map((repo, i) => (
+            <RepoCard key={repo.id} repo={repo} index={i} onClick={() => onSelectRepo(repo.id)} />
           ))}
         </div>
       )}
@@ -213,10 +94,61 @@ const RepoList = ({ onSelectRepo }: { onSelectRepo: (id: string) => void }) => {
   );
 };
 
-const ActivityIcon = ({ health }: { health: string }) => {
-  if (health === 'optimal') return <CheckCircle2 size={14} className="text-[var(--success)]" />;
-  if (health === 'warning') return <AlertCircle size={14} className="text-[var(--warning)]" />;
-  return <Shield size={14} className="text-white/20" />;
-}
+/* ── Bento Repo Card ── */
+const RepoCard = ({ repo, index, onClick }: any) => {
+  const mouseX = useMotionValue(0);
+  const mouseY = useMotionValue(0);
+
+  function handleMouseMove({ currentTarget, clientX, clientY }: React.MouseEvent) {
+    const { left, top } = currentTarget.getBoundingClientRect();
+    mouseX.set(clientX - left);
+    mouseY.set(clientY - top);
+  }
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: index * 0.05, duration: 0.6 }}
+      onMouseMove={handleMouseMove}
+      onClick={onClick}
+      className="group relative cursor-pointer overflow-hidden rounded-[2.5rem] bg-[var(--surface-container)] border border-white/5 transition-all duration-500 hover:border-white/10 hover:bg-[#1a1a1a]"
+    >
+      <motion.div
+        className="pointer-events-none absolute -inset-px rounded-[2.5rem] transition duration-300 opacity-0 group-hover:opacity-100"
+        style={{
+          background: useTransform(
+            [mouseX, mouseY],
+            ([x, y]) => `radial-gradient(350px circle at ${x}px ${y}px, rgba(255,255,255,0.05), transparent 80%)`
+          ),
+        }}
+      />
+
+      <div className="p-8 h-full flex flex-col justify-between space-y-8">
+        <div className="flex items-start justify-between relative z-10">
+          <div className="p-3 rounded-2xl bg-white/5 group-hover:bg-[var(--accent-primary)]/10 transition-colors">
+            {repo.private ? <Lock size={22} className="text-white/40 group-hover:text-[var(--accent-primary)]" /> : <Globe size={22} className="text-white/40 group-hover:text-[var(--accent-primary)]" />}
+          </div>
+          {repo.securityEnabled && (
+             <div className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-[#D4A647]">
+                <Shield size={12} /> Secured
+             </div>
+          )}
+        </div>
+
+        <div className="relative z-10 space-y-2">
+           <h3 className="font-display text-2xl font-bold text-white tracking-tight group-hover:text-[var(--accent-warm)] transition-colors">{repo.name}</h3>
+           <p className="text-sm text-[var(--text-muted)] line-clamp-2 font-light leading-relaxed">{repo.description || 'No description provided for this codebase.'}</p>
+        </div>
+
+        <div className="flex items-center gap-4 text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] relative z-10 pt-6 border-t border-white/5">
+          <span className="flex items-center gap-1.5"><div className="w-1.5 h-1.5 rounded-full bg-[var(--accent-primary)] shadow-[0_0_8px_var(--accent-primary)]" />{repo.language || 'Unknown'}</span>
+          <span className="flex items-center gap-1.5"><Star size={12} fill="currentColor" className="text-yellow-500/20" />{repo.stars || 0}</span>
+          <span className="flex items-center gap-1.5"><GitBranch size={12} />{repo.defaultBranch || 'main'}</span>
+        </div>
+      </div>
+    </motion.div>
+  );
+};
 
 export default RepoList;

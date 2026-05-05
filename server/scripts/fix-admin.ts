@@ -5,19 +5,25 @@ import path from 'path';
 
 dotenv.config({ path: path.join(__dirname, '../.env') });
 
-const prisma = new PrismaClient({
-    datasourceUrl: "postgresql://lynxis_user:lynxis_password@localhost:5432/lynxis_db?schema=public"
-});
+const prisma = new PrismaClient();
 
 async function fix() {
+    const email = process.env.ADMIN_USER_EMAIL;
+    const password = process.env.ADMIN_USER_PASSWORD;
+
+    if (!email || !password) {
+        console.error('ADMIN_USER_EMAIL or ADMIN_USER_PASSWORD not defined in .env');
+        return;
+    }
+
     try {
-        const hash = await bcrypt.hash('Admin123!', 10);
+        const hash = await bcrypt.hash(password, 10);
         
-        let user = await prisma.user.findUnique({ where: { email: 'admin@godnix.com' } });
+        let user = await prisma.user.findUnique({ where: { email } });
         
         if (user) {
             user = await prisma.user.update({
-                where: { email: 'admin@godnix.com' },
+                where: { email },
                 data: {
                     passwordHash: hash,
                     onboardingCompleted: true
@@ -26,21 +32,21 @@ async function fix() {
         } else {
             user = await prisma.user.create({
                 data: {
-                    id: 'admin-boot',
+                    id: 'admin-boot-fix',
                     username: 'LynxisAdmin',
-                    email: 'admin@godnix.com',
+                    email,
                     passwordHash: hash,
                     onboardingCompleted: true
                 }
             });
         }
 
-        const assignment = await prisma.adminRoleAssignment.findFirst({
+        const assignment = await (prisma as any).adminRoleAssignment.findFirst({
             where: { userId: user.id, role: 'SUPER_ADMIN' }
         });
 
         if (!assignment) {
-            await prisma.adminRoleAssignment.create({
+            await (prisma as any).adminRoleAssignment.create({
                 data: {
                     userId: user.id,
                     role: 'SUPER_ADMIN',
@@ -49,7 +55,7 @@ async function fix() {
             });
         }
 
-        console.log('Successfully fixed/created admin@godnix.com with password Admin123!');
+        console.log(`Successfully fixed/created ${email} with password from .env`);
     } catch (e) {
         console.error(e);
     } finally {

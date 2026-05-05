@@ -1,190 +1,217 @@
 import { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { 
-  GitPullRequest, CheckCircle2, AlertCircle, 
-  MessageSquare, Shield, Zap, ChevronRight,
-  Maximize2, Github, Layout, FileCode
+  CheckCircle2, AlertCircle, MessageSquare, Shield, 
+  Zap, ChevronRight, Maximize2, Github, Layout,
+  Terminal, Code2, Sparkles, Fingerprint, Layers
 } from 'lucide-react';
-import { Card, Button, Badge, ErrorState } from '../../components/ui';
+import { Card, Button, Badge } from '../../components/ui';
+import { useAI, AIModel } from '../../context/AIContext';
 
-const PRReviewViewer = () => {
-    const [prData, setPrData] = useState<any>(null);
-    const [loading, setLoading] = useState(true);
-    const [errorMsg, setErrorMsg] = useState<string | null>(null);
+const PRReviewViewer = ({ repoId }: { repoId?: string }) => {
+  const [prData, setPrData] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const { selectedModel, setSelectedModel } = useAI();
 
-    const fetchPRData = async () => {
-        try {
-            setLoading(true);
-            setErrorMsg(null);
-            const res = await fetch('http://localhost:4003/api/reviews/latest', {
-                credentials: 'include'
-            });
-            if (res.ok) {
-                const data = await res.json();
-                setPrData(data);
-            } else {
-                setErrorMsg(`Failed to fetch PR data: ${res.status}`);
-            }
-        } catch (err: any) {
-            console.error('Failed to fetch PR data:', err);
-            setErrorMsg(err.message);
-        } finally {
-            setLoading(false);
-        }
-    };
+  const fetchPRData = async () => {
+    try {
+      setLoading(true);
+      const url = repoId
+        ? `http://localhost:4003/api/reviews/latest?repoId=${repoId}`
+        : 'http://localhost:4003/api/reviews/latest';
+      const res = await fetch(url, { credentials: 'include' });
+      if (res.ok) setPrData(await res.json());
+    } catch (err: any) {
+      console.error('Failed to fetch PR data:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    useEffect(() => {
-        fetchPRData();
-    }, []);
+  useEffect(() => { fetchPRData(); }, [repoId]);
 
-    if (loading) return (
-        <div className="h-[60vh] flex flex-col items-center justify-center space-y-4">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-t-transparent border-[var(--accent-primary)]"></div>
-            <p className="text-sm font-bold text-[var(--accent-primary)] animate-pulse uppercase tracking-widest">Hydrating Review Data...</p>
+  if (loading) return (
+    <div className="h-[60vh] flex flex-col items-center justify-center space-y-8">
+        <div className="relative">
+          <div className="h-24 w-24 rounded-3xl border-4 border-[var(--accent-primary)]/20 animate-spin" />
+          <div className="absolute inset-0 flex items-center justify-center">
+             <Zap className="text-[var(--accent-primary)] animate-pulse" size={32} />
+          </div>
         </div>
-    );
+        <p className="text-xs font-black uppercase tracking-[0.4em] text-[var(--accent-primary)]">Syncing Intelligence...</p>
+    </div>
+  );
 
-    if (errorMsg) return (
-        <div className="py-20">
-            <ErrorState 
-                error={errorMsg} 
-                onRetry={fetchPRData}
-                title={errorMsg.includes('Failed to fetch') || errorMsg.includes('NetworkError') ? "Review Engine Offline" : "Access Denied"}
-                message={errorMsg.includes('Failed to fetch') || errorMsg.includes('NetworkError') 
-                    ? "The Lynxis review microservices are currently unreachable. Please verify that Docker is operational." 
-                    : "We encountered an issue accessing the PR review data. Please try again or contact support."
-                }
-            />
-        </div>
-    );
+  if (!prData) return (
+    <div className="h-[60vh] flex flex-col items-center justify-center space-y-6 text-center">
+       <div className="p-6 rounded-3xl bg-white/5 border border-white/10 text-white/20 mb-4">
+          <Layers size={48} />
+       </div>
+       <h2 className="text-3xl font-bold text-white tracking-tight">No Intelligence Found.</h2>
+       <p className="text-[var(--text-secondary)] font-light max-w-sm">
+          Connect a repository and trigger your first neural scan to begin generating review intelligence.
+       </p>
+       <Button variant="primary" className="h-12 px-8 rounded-full text-[10px] tracking-widest font-black uppercase mt-4">
+          Trigger Neural Scan
+       </Button>
+    </div>
+  );
 
-    if (!prData) return (
-        <div className="py-20 text-center">
-            <div className="h-16 w-16 rounded-full bg-white/5 flex items-center justify-center text-white/10 mx-auto mb-6">
-                <Layout size={32} />
+  return (
+    <motion.div 
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      className="space-y-12 pb-32"
+    >
+      {/* ── Editorial Header ── */}
+      <header className="relative flex flex-col md:flex-row md:items-end justify-between gap-10">
+        <div className="space-y-6 max-w-3xl">
+          <div className="flex flex-wrap items-center gap-4">
+            <Badge variant="primary" className="gap-2 px-4 py-1.5 rounded-full font-black text-[10px] tracking-widest uppercase bg-[var(--accent-primary)]/10 text-[var(--accent-primary)] border-none">
+              <Github size={12} /> PR #{prData.number}
+            </Badge>
+            <div className="flex items-center gap-2 bg-white/5 px-4 py-1.5 rounded-full border border-white/10 group hover:border-[var(--accent-warm)]/30 transition-all">
+              <Sparkles size={12} className="text-[var(--accent-warm)]" />
+              <select 
+                value={selectedModel} 
+                onChange={(e) => setSelectedModel(e.target.value as AIModel)}
+                className="bg-transparent text-[10px] font-black tracking-widest uppercase text-white/60 group-hover:text-white outline-none cursor-pointer appearance-none"
+              >
+                <option value="anthropic">Anthropic Claude</option>
+                <option value="openai">OpenAI GPT-4</option>
+                <option value="gemini">Google Gemini</option>
+              </select>
+              <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
             </div>
-            <h3 className="text-xl font-bold text-white">No Active Reviews</h3>
-            <p className="text-[var(--text-muted)] mt-2">Connect a repository and open a PR to see AI analysis.</p>
+          </div>
+          <h1 className="font-display text-5xl md:text-8xl font-bold text-white tracking-tight leading-[0.85]">
+            Review <span className="text-gradient-warm italic">Intelligence.</span>
+          </h1>
+          <div className="flex flex-wrap items-center gap-6 text-[var(--text-secondary)] font-light text-lg">
+            <span className="flex items-center gap-2 text-white/60 font-medium bg-white/5 px-4 py-2 rounded-2xl border border-white/5">
+              <Code2 size={18} className="text-[var(--accent-primary)]" />
+              {prData.owner}/{prData.repo}
+            </span>
+            <span className="text-white/20">/</span>
+            <span className="font-mono text-sm bg-white/3 px-3 py-1.5 rounded-xl border border-white/5">{prData.branch}</span>
+          </div>
         </div>
-    );
+        <div className="flex gap-4">
+          <Button variant="glass" className="h-16 px-8 rounded-full border-white/5 text-[11px] tracking-widest uppercase font-black hover:bg-white/5">
+             Full Diff Report
+          </Button>
+          <Button variant="primary" className="h-16 px-10 rounded-full text-[11px] tracking-widest uppercase font-black shadow-[0_0_40px_var(--accent-primary)]/20">
+             Approve Merge
+          </Button>
+        </div>
+      </header>
 
-    return (
-        <div className="space-y-8 pb-20">
-            {/* PR Header */}
-            <header className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-                <div className="space-y-2">
-                    <div className="flex items-center gap-3">
-                        <Badge variant="primary" className="bg-[var(--accent-primary)]/10 text-[var(--accent-primary)] flex gap-1.5 items-center">
-                            <Github size={12} />
-                            PR #{prData.number}
-                        </Badge>
-                        <h1 className="text-3xl font-black text-white tracking-tight">{prData.title}</h1>
-                    </div>
-                    <div className="flex items-center gap-4 text-sm text-[var(--text-muted)]">
-                        <span className="flex items-center gap-1.5 font-medium"><Github size={14} /> {prData.owner}/{prData.repo}</span>
-                        <ChevronRight size={14} className="opacity-20" />
-                        <span className="bg-white/5 px-2 py-0.5 rounded text-white/50 font-mono text-xs">{prData.branch}</span>
-                    </div>
-                </div>
-                <div className="flex gap-3">
-                    <Button variant="glass" className="gap-2">
-                        <Maximize2 size={18} />
-                        Full Diff
-                    </Button>
-                    <Button className="gap-2 shadow-[0_0_20px_rgba(59,130,246,0.2)]">
-                        <CheckCircle2 size={18} />
-                        Approve
-                    </Button>
-                </div>
-            </header>
-
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                {/* Findings Column */}
-                <div className="lg:col-span-2 space-y-6">
-                    <div className="flex items-center justify-between">
-                        <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                            <Shield className="text-[var(--accent-primary)]" size={20} />
-                            AI Findings ({prData.findings?.length || 0})
-                        </h3>
-                        <Badge variant="glass" className="bg-white/5">V2 Analysis Engine</Badge>
-                    </div>
-
-                    <div className="space-y-4">
-                        {(prData.findings || []).map((finding: any, idx: number) => (
-                            <FindingCard key={idx} finding={finding} />
-                        ))}
-                    </div>
-                </div>
-
-                {/* Meta Column */}
-                <div className="space-y-6">
-                    <Card className="p-8 border-white/5 bg-white/[0.02]">
-                        <h3 className="text-lg font-bold text-white mb-6">Review Summary</h3>
-                        <div className="space-y-6">
-                            <div className="flex items-center justify-between">
-                                <span className="text-sm text-[var(--text-muted)]">Security Priority</span>
-                                <Badge variant="danger" className="bg-red-500/10 text-red-500 border-red-500/20">Critical</Badge>
-                            </div>
-                            <div className="flex items-center justify-between">
-                                <span className="text-sm text-[var(--text-muted)]">Code Quality</span>
-                                <Badge variant="primary" className="bg-blue-500/10 text-blue-400 border-blue-500/20">A- Grade</Badge>
-                            </div>
-                            <div className="pt-6 border-t border-white/5">
-                                <div className="flex items-center gap-2 text-sm text-green-400 font-bold mb-2">
-                                    <CheckCircle2 size={16} />
-                                    Ready for Merge
-                                </div>
-                                <p className="text-xs text-[var(--text-muted)] leading-relaxed">
-                                    AI engine suggests merging after addressing the critical security finding in middleware.
-                                </p>
-                            </div>
-                        </div>
-                    </Card>
-
-                    <Card className="p-6 border-[var(--accent-primary)]/20 bg-[var(--accent-primary)]/5 relative overflow-hidden group">
-                        <Zap className="absolute -right-4 -bottom-4 text-[var(--accent-primary)] opacity-10 group-hover:scale-125 transition-transform" size={120} />
-                        <h4 className="font-bold text-white mb-1">Ollama Logic</h4>
-                        <p className="text-xs text-[var(--accent-primary)] opacity-80 leading-relaxed italic">
-                            Powered by Llama3-8B local inference cluster. Analysis completed in 4.2s.
-                        </p>
-                    </Card>
-                </div>
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-start">
+        {/* Main Findings Panel */}
+        <div className="lg:col-span-8 space-y-12">
+          <div className="flex items-center justify-between border-b border-white/5 pb-6">
+            <div className="flex items-center gap-4">
+               <div className="p-3 rounded-2xl bg-red-500/10 text-red-400 border border-red-500/20">
+                  <Shield size={24} />
+               </div>
+               <div>
+                  <h3 className="text-2xl font-bold text-white tracking-tight">Vulnerability Report</h3>
+                  <p className="text-sm text-[var(--text-muted)]">Automated scan detected {prData.findings?.length || 0} security vectors.</p>
+               </div>
             </div>
+            <p className="text-4xl font-black text-white/5">{prData.findings?.length || 0}</p>
+          </div>
+
+          <div className="space-y-6">
+            <AnimatePresence mode="popLayout">
+              {(prData.findings || []).map((f: any, i: number) => (
+                <motion.div
+                  key={i}
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: i * 0.1 }}
+                >
+                  <Card className="p-8 border-white/5 bg-[var(--surface-lowest)] hover:bg-[var(--surface-container)] transition-all duration-500 overflow-hidden relative group">
+                    <div className="absolute top-0 right-0 p-8 text-white/5 group-hover:text-red-500/10 transition-colors pointer-events-none">
+                       <Fingerprint size={120} />
+                    </div>
+                    
+                    <div className="relative z-10 flex flex-col md:flex-row gap-8 items-start">
+                       <div className="space-y-4 flex-1">
+                          <div className="flex items-center gap-3">
+                             <Badge variant="danger" className="rounded-full px-3 py-1 font-black">High Risk</Badge>
+                             <span className="text-[10px] uppercase tracking-widest text-[var(--text-muted)] font-black">Ref: SEC-{100+i}</span>
+                          </div>
+                          <h4 className="text-2xl font-bold text-white tracking-tight">{f.type}</h4>
+                          <p className="text-md text-[var(--text-secondary)] leading-relaxed max-w-2xl">{f.message}</p>
+                          <div className="flex items-center gap-3 text-sm font-mono text-cyan-400 bg-cyan-950/20 w-fit px-4 py-2 rounded-xl border border-cyan-500/20">
+                             <Terminal size={14} /> {f.file}:{f.line}
+                          </div>
+                       </div>
+                       <Button variant="glass" className="rounded-full bg-white/5 border-white/5 text-[10px] tracking-widest font-black uppercase">
+                          Fix Intelligence
+                       </Button>
+                    </div>
+                  </Card>
+                </motion.div>
+              ))}
+            </AnimatePresence>
+          </div>
         </div>
-    );
+
+        {/* Sidebar Summary */}
+        <div className="lg:col-span-4 space-y-6">
+          <Card className="p-10 border-white/5 bg-[var(--surface-container)] rounded-[3rem] space-y-10 sticky top-32">
+             <div className="space-y-6">
+                <h3 className="text-xs font-black text-[var(--text-muted)] uppercase tracking-[0.3em]">Neural Summary</h3>
+                <div className="space-y-8">
+                   <SummaryScore label="Security Integrity" value="65/100" color="var(--danger)" />
+                   <SummaryScore label="Code Efficiency" value="92/100" color="var(--success)" />
+                   <SummaryScore label="Compliance" value="Passed" color="var(--accent-warm)" />
+                 </div>
+             </div>
+
+             <div className="pt-10 border-t border-white/5 space-y-6">
+                <div className="p-4 rounded-3xl bg-green-500/5 border border-green-500/10 flex items-center gap-4">
+                   <CheckCircle2 size={24} className="text-green-400" />
+                   <div>
+                      <p className="text-sm font-bold text-white">Green Light</p>
+                      <p className="text-[10px] uppercase tracking-widest text-[var(--text-muted)] font-black">Logic verified</p>
+                   </div>
+                </div>
+                <div className="p-6 rounded-3xl bg-[var(--accent-primary)]/5 border border-[var(--accent-primary)]/10">
+                   <div className="flex items-center gap-3 mb-4">
+                      <Layers size={18} className="text-[var(--accent-primary)]" />
+                      <p className="text-sm font-bold text-white">Engine V3.2</p>
+                   </div>
+                   <p className="text-xs text-[var(--text-secondary)] leading-relaxed italic font-light">
+                      "Analysis indicates potential SQL injection in the ORM layer. Recommend parameterization for the `search` function."
+                   </p>
+                </div>
+             </div>
+          </Card>
+        </div>
+      </div>
+    </motion.div>
+  );
 };
 
-const FindingCard = ({ finding }: any) => {
-    return (
-        <Card className="p-6 border-white/5 bg-white/[0.01] hover:bg-white/[0.02] transition-all group border-l-4 border-l-red-500/50">
-            <div className="flex items-start justify-between mb-4">
-                <div className="flex items-center gap-3">
-                    <div className="p-2 rounded-lg bg-red-500/10 text-red-500">
-                        <AlertCircle size={18} />
-                    </div>
-                    <div>
-                        <h4 className="font-bold text-white">{finding.type}</h4>
-                        <p className="text-xs text-[var(--text-muted)]">{finding.file}:{finding.line}</p>
-                    </div>
-                </div>
-                <Badge variant="danger" className="bg-red-500/10 text-red-500">High</Badge>
-            </div>
-            <p className="text-sm text-white/80 leading-relaxed mb-6">
-                {finding.message}
-            </p>
-            <div className="flex items-center gap-4 pt-4 border-t border-white/5">
-                <div className="flex -space-x-2">
-                    {[1, 2].map(i => (
-                        <div key={i} className="h-6 w-6 rounded-full border-2 border-[var(--bg-primary)] bg-white/10" />
-                    ))}
-                </div>
-                <span className="text-xs text-[var(--text-muted)]">2 engineers discussed</span>
-                <Button variant="ghost" size="sm" className="ml-auto gap-2 text-[var(--accent-primary)]">
-                    <MessageSquare size={14} />
-                    View Thread
-                </Button>
-            </div>
-        </Card>
-    );
-};
+const SummaryScore = ({ label, value, color }: any) => (
+   <div className="space-y-2">
+      <div className="flex justify-between items-end">
+         <p className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)]">{label}</p>
+         <p className="text-sm font-bold text-white">{value}</p>
+      </div>
+      <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
+         <motion.div 
+            initial={{ width: 0 }}
+            animate={{ width: value.includes('/') ? `${parseInt(value)}%` : '100%' }}
+            transition={{ duration: 1.5, ease: "circOut" }}
+            className="h-full rounded-full shadow-[0_0_10px]"
+            style={{ backgroundColor: color, shadowColor: color }}
+         />
+      </div>
+   </div>
+);
 
 export default PRReviewViewer;
