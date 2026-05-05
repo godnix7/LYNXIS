@@ -28,13 +28,17 @@ export const AIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
   });
 
   useEffect(() => {
-    const savedKeys = localStorage.getItem('lynxis_ai_keys');
-    if (savedKeys) {
-      setAiKeys(JSON.parse(savedKeys));
-    }
-    const savedModel = localStorage.getItem('lynxis_selected_model');
-    if (savedModel) {
-      setSelectedModel(savedModel as AIModel);
+    try {
+      const savedKeys = localStorage.getItem('lynxis_ai_keys');
+      if (savedKeys) {
+        setAiKeys(JSON.parse(savedKeys));
+      }
+      const savedModel = localStorage.getItem('lynxis_selected_model');
+      if (savedModel) {
+        setSelectedModel(savedModel as AIModel);
+      }
+    } catch (e) {
+      console.error('Failed to load saved AI settings:', e);
     }
   }, []);
 
