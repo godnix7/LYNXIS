@@ -7,7 +7,7 @@ import {
   Terminal, Code2, Sparkles, Fingerprint, Layers
 } from 'lucide-react';
 import { Card, Button, Badge } from '../../components/ui';
-import { useAI, AIModel } from '../../context/AIContext';
+import { useAI, type AIModel } from '../../context/AIContext';
 
 const PRReviewViewer = ({ repoId }: { repoId?: string }) => {
   const [prData, setPrData] = useState<any>(null);
@@ -19,7 +19,7 @@ const PRReviewViewer = ({ repoId }: { repoId?: string }) => {
       setLoading(true);
       const url = repoId
         ? `${API_BASE_URL}/api/reviews/latest?repoId=${repoId}`
-        : '${API_BASE_URL}/api/reviews/latest';
+        : `${API_BASE_URL}/api/reviews/latest`;
       const res = await fetch(url, { credentials: 'include' });
       if (res.ok) setPrData(await res.json());
     } catch (err: any) {
@@ -209,7 +209,7 @@ const SummaryScore = ({ label, value, color }: any) => (
             animate={{ width: value.includes('/') ? `${parseInt(value)}%` : '100%' }}
             transition={{ duration: 1.5, ease: "circOut" }}
             className="h-full rounded-full shadow-[0_0_10px]"
-            style={{ backgroundColor: color, shadowColor: color }}
+            style={{ backgroundColor: color }}
          />
       </div>
    </div>

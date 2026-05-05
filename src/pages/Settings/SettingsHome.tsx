@@ -4,7 +4,7 @@ import { User, Lock, Bell, Globe, Trash2, LogOut, Key, CheckCircle2, Cpu, Sparkl
 import { Card, Button, Input, cn } from '../../components/ui';
 import { MultiAIKeyBar } from '../../components/settings/MultiAIKeyBar';
 import { useAuth } from '../../context/AuthContext';
-import { useAI, AIModel } from '../../context/AIContext';
+import { useAI, type AIModel } from '../../context/AIContext';
 
 const SettingsHome = () => {
   const { user, logout } = useAuth();

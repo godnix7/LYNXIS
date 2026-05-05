@@ -6,6 +6,7 @@ interface AIKeys {
   anthropic: string;
   openai: string;
   gemini: string;
+  [key: string]: string;
 }
 
 interface AIContextType {
