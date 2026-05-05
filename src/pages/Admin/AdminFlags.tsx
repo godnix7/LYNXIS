@@ -1,3 +1,4 @@
+import { API_BASE_URL } from '../../config/api';
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Shield, Zap, Info, Plus, Save, Trash2, Rocket, RotateCcw } from 'lucide-react';
@@ -21,7 +22,7 @@ const AdminFlags = () => {
 
   const fetchFlags = () => {
     setLoading(true);
-    fetch('http://localhost:4003/api/admin/flags', { credentials: 'include' })
+    fetch(`${API_BASE_URL}/api/admin/flags`, { credentials: 'include' })
       .then(res => res.json())
       .then(data => {
         setFlags(data);
@@ -33,7 +34,7 @@ const AdminFlags = () => {
   const handleUpdateFlag = async (flag: FeatureFlag) => {
     setSavingId(flag.id);
     try {
-      await fetch('http://localhost:4003/api/admin/flags', {
+      await fetch(`${API_BASE_URL}/api/admin/flags`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(flag),

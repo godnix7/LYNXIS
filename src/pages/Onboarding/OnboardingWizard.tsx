@@ -1,3 +1,4 @@
+import { API_BASE_URL } from '../../config/api';
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Github, ChevronRight, CheckCircle2, ArrowLeft } from 'lucide-react';
@@ -13,13 +14,13 @@ const OnboardingWizard = () => {
   const [error, setError] = useState<string | null>(null);
 
   const handleGithubConnect = () => {
-    window.location.href = 'http://localhost:4003/api/auth/github';
+    window.location.href = '${API_BASE_URL}/api/auth/github';
   };
 
   const handleComplete = async () => {
     try {
       setLoading(true);
-      await fetch('http://localhost:4003/api/profile', {
+      await fetch(`${API_BASE_URL}/api/profile`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',

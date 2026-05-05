@@ -1,3 +1,4 @@
+import { API_BASE_URL } from '../../config/api';
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Users, Search, Filter, Shield, MoreVertical, CheckCircle2, XCircle, UserPlus, Mail } from 'lucide-react';
@@ -21,7 +22,7 @@ const UserManagement = () => {
   const [search, setSearch] = useState('');
 
   useEffect(() => {
-    fetch('http://localhost:4003/api/admin/users', { credentials: 'include' })
+    fetch(`${API_BASE_URL}/api/admin/users`, { credentials: 'include' })
       .then(res => res.json())
       .then(data => {
         setUsers(data);

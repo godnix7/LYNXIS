@@ -1,3 +1,4 @@
+import { API_BASE_URL } from '../config/api';
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 
 export interface Notification {
@@ -27,7 +28,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
 
   const fetchNotifications = useCallback(async () => {
     try {
-      const response = await fetch('http://localhost:4003/api/notifications', { credentials: 'include' });
+      const response = await fetch(`${API_BASE_URL}/api/notifications`, { credentials: 'include' });
       if (response.ok) {
         const data = await response.json();
         setNotifications(data);
@@ -48,7 +49,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
 
   const markAsRead = async (id: string) => {
     try {
-      const response = await fetch(`http://localhost:4003/api/notifications/${id}/read`, { 
+      const response = await fetch(`${API_BASE_URL}/api/notifications/${id}/read`, { 
         method: 'PATCH',
         credentials: 'include'
       });
@@ -62,7 +63,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
 
   const markAllAsRead = async () => {
     try {
-      const response = await fetch('http://localhost:4003/api/notifications/read-all', { 
+      const response = await fetch(`${API_BASE_URL}/api/notifications/read-all`, { 
         method: 'PATCH',
         credentials: 'include'
       });

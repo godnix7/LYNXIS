@@ -1,3 +1,4 @@
+import { API_BASE_URL } from '../../config/api';
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Activity, Server, Database, Globe, Cpu, Zap, Clock, TrendingUp } from 'lucide-react';
@@ -31,7 +32,7 @@ const AdminHealth = () => {
   }, []);
 
   const fetchHealth = () => {
-    fetch('http://localhost:4003/api/admin/health', { credentials: 'include' })
+    fetch(`${API_BASE_URL}/api/admin/health`, { credentials: 'include' })
       .then(res => res.json())
       .then(d => {
         setData(d);

@@ -1,3 +1,4 @@
+import { API_BASE_URL } from '../../config/api';
 import { useState, useEffect } from 'react';
 import { FileText, Clock, User, Filter } from 'lucide-react';
 import { Card, Button, Badge } from '../../components/ui';
@@ -9,7 +10,7 @@ const AuditLogs = () => {
   useEffect(() => {
     const fetchLogs = async () => {
       try {
-        const res = await fetch('http://localhost:4003/api/admin/audit', { credentials: 'include' });
+        const res = await fetch(`${API_BASE_URL}/api/admin/audit`, { credentials: 'include' });
         if (res.ok) setLogs(await res.json());
       } catch (err) { console.error('Failed:', err); }
       finally { setLoading(false); }

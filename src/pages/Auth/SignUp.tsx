@@ -1,3 +1,4 @@
+import { API_BASE_URL } from '../../config/api';
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Github, Mail, Lock, User, ArrowRight, ShieldCheck, Zap } from 'lucide-react';
@@ -16,7 +17,7 @@ const SignUp = ({ onToggleMode }: { onToggleMode: () => void }) => {
     setLoading(true);
     // API call to signup
     try {
-        const res = await fetch('http://localhost:4003/api/auth/signup', {
+        const res = await fetch(`${API_BASE_URL}/api/auth/signup`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             credentials: 'include',

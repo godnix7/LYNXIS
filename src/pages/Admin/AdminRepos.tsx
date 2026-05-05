@@ -1,3 +1,4 @@
+import { API_BASE_URL } from '../../config/api';
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Database, Search, Filter, ExternalLink, Activity, Users, GitPullRequest, Shield } from 'lucide-react';
@@ -26,7 +27,7 @@ const AdminRepos = () => {
   const [search, setSearch] = useState('');
 
   useEffect(() => {
-    fetch('http://localhost:4003/api/admin/repos', { credentials: 'include' })
+    fetch(`${API_BASE_URL}/api/admin/repos`, { credentials: 'include' })
       .then(res => res.json())
       .then(data => {
         setRepos(data);

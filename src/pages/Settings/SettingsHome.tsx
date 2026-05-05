@@ -1,3 +1,4 @@
+import { API_BASE_URL } from '../../config/api';
 import { useState, useEffect } from 'react';
 import { User, Lock, Bell, Globe, Trash2, LogOut, Key, CheckCircle2, Cpu, Sparkles } from 'lucide-react';
 import { Card, Button, Input, cn } from '../../components/ui';
@@ -25,7 +26,7 @@ const SettingsHome = () => {
   const handleSaveProfile = async () => {
     try {
       setSaving(true);
-      await fetch('http://localhost:4003/api/profile', {
+      await fetch(`${API_BASE_URL}/api/profile`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',

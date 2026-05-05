@@ -1,3 +1,4 @@
+import { API_BASE_URL } from '../../config/api';
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Shield, Eye, Lock, UserCheck, Globe, Clock, AlertCircle } from 'lucide-react';
@@ -21,7 +22,7 @@ const AdminSecurity = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch('http://localhost:4003/api/admin/audit-logs', { credentials: 'include' })
+    fetch(`${API_BASE_URL}/api/admin/audit-logs`, { credentials: 'include' })
       .then(res => res.json())
       .then(data => {
         setLogs(data);

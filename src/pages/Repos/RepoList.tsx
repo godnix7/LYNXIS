@@ -1,3 +1,4 @@
+import { API_BASE_URL } from '../../config/api';
 import { useState, useEffect } from 'react';
 import { motion, useMotionValue, useTransform } from 'framer-motion';
 import { Github, GitBranch, Star, Shield, Search, Plus, Loader2, Pin, Globe, Lock, Cpu } from 'lucide-react';
@@ -11,7 +12,7 @@ const RepoList = ({ onSelectRepo }: { onSelectRepo: (id: string) => void }) => {
   const fetchRepos = async () => {
     try {
       setLoading(true);
-      const res = await fetch('http://localhost:4003/api/repos', { credentials: 'include' });
+      const res = await fetch(`${API_BASE_URL}/api/repos`, { credentials: 'include' });
       if (res.ok) {
         setRepos(await res.json());
       }

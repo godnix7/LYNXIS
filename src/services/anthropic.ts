@@ -1,24 +1,23 @@
 import Anthropic from '@anthropic-ai/sdk';
 
-const getApiKey = () => {
+export const getAnthropicClient = () => {
   const savedKeys = localStorage.getItem('lynxis_ai_keys');
+  let key = import.meta.env.VITE_ANTHROPIC_API_KEY;
+  
   if (savedKeys) {
     const keys = JSON.parse(savedKeys);
-    if (keys.anthropic) return keys.anthropic;
+    if (keys.anthropic) key = keys.anthropic;
   }
-  return import.meta.env.VITE_ANTHROPIC_API_KEY;
+
+  if (!key || key === 'your_api_key_here') {
+    throw new Error('Anthropic API key is missing. Please add it in Settings.');
+  }
+
+  return new Anthropic({
+    apiKey: key,
+    dangerouslyAllowBrowser: true,
+  });
 };
-
-const apiKey = getApiKey();
-
-if (!apiKey || apiKey === 'your_api_key_here') {
-  console.warn('Anthropic API key is missing. Please add it in Settings.');
-}
-
-export const anthropic = new Anthropic({
-  apiKey: apiKey || '',
-  dangerouslyAllowBrowser: true,
-});
 
 export const analyzeCode = async (code: string, fileName: string) => {
   const prompt = `
@@ -45,7 +44,8 @@ export const analyzeCode = async (code: string, fileName: string) => {
   `;
 
   try {
-    const message = await anthropic.messages.create({
+    const client = getAnthropicClient();
+    const message = await client.messages.create({
       model: 'claude-3-5-sonnet-20241022',
       max_tokens: 1024,
       messages: [

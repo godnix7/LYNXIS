@@ -1,3 +1,4 @@
+import { API_BASE_URL } from '../../config/api';
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
@@ -14,7 +15,7 @@ const AdminOverview = () => {
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        const res = await fetch('http://localhost:4003/api/admin/stats', { credentials: 'include' });
+        const res = await fetch(`${API_BASE_URL}/api/admin/stats`, { credentials: 'include' });
         if (res.ok) setStats(await res.json());
       } catch (err) { console.error('Failed:', err); }
       finally { setLoading(false); }

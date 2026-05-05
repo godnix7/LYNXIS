@@ -1,3 +1,4 @@
+import { API_BASE_URL } from '../../config/api';
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence, useMotionValue, useSpring, useTransform } from 'framer-motion';
 import {
@@ -25,7 +26,7 @@ const DashboardHome = ({ onNavigate }: { onNavigate: (tab: string) => void }) =>
 
   const fetchStats = useCallback(async () => {
     try {
-      const res = await fetch('http://localhost:4003/api/stats', { credentials: 'include' });
+      const res = await fetch(`${API_BASE_URL}/api/stats`, { credentials: 'include' });
       if (res.ok) setStats(await res.json());
     } catch (error) {
        console.error('Failed to fetch stats:', error);

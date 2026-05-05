@@ -1,3 +1,4 @@
+import { API_BASE_URL } from '../../config/api';
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { GitPullRequest, Search, ExternalLink, Activity, Clock, Shield, AlertTriangle, CheckCircle2 } from 'lucide-react';
@@ -24,7 +25,7 @@ const AdminReviews = () => {
   const [search, setSearch] = useState('');
 
   useEffect(() => {
-    fetch('http://localhost:4003/api/admin/reviews', { credentials: 'include' })
+    fetch(`${API_BASE_URL}/api/admin/reviews`, { credentials: 'include' })
       .then(res => res.json())
       .then(data => {
         setReviews(data);

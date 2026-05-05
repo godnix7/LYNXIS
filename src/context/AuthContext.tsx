@@ -1,3 +1,4 @@
+import { API_BASE_URL } from '../config/api';
 import React, { createContext, useContext, useState, useEffect } from 'react';
 
 interface AuthContextType {
@@ -11,13 +12,15 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '${API_BASE_URL}';
+
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<any | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   const fetchUser = async () => {
     try {
-      const res = await fetch('http://localhost:4003/api/auth/me', {
+      const res = await fetch(`${API_BASE_URL}/api/auth/me`, {
           credentials: 'include'
       });
       if (res.ok) {
@@ -41,12 +44,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const login = async (provider: 'github' | 'gitlab') => {
     // Redirect to backend auth
-    window.location.href = `http://localhost:4003/api/auth/${provider}`;
+    window.location.href = `${API_BASE_URL}/api/auth/${provider}`;
   };
 
   const logout = async () => {
     try {
-        await fetch('http://localhost:4003/api/auth/logout', { method: 'POST', credentials: 'include' });
+        await fetch(`${API_BASE_URL}/api/auth/logout`, { method: 'POST', credentials: 'include' });
     } catch (e) {
         console.error('Logout failed', e);
     }
@@ -57,7 +60,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const completeOnboarding = async (profileData?: any) => {
     try {
-        const res = await fetch('http://localhost:4003/api/users/onboarding', {
+        const res = await fetch(`${API_BASE_URL}/api/users/onboarding`, {
             method: 'PATCH',
             headers: {
                 'Content-Type': 'application/json'

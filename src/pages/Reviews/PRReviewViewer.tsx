@@ -1,3 +1,4 @@
+import { API_BASE_URL } from '../../config/api';
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
@@ -17,8 +18,8 @@ const PRReviewViewer = ({ repoId }: { repoId?: string }) => {
     try {
       setLoading(true);
       const url = repoId
-        ? `http://localhost:4003/api/reviews/latest?repoId=${repoId}`
-        : 'http://localhost:4003/api/reviews/latest';
+        ? `${API_BASE_URL}/api/reviews/latest?repoId=${repoId}`
+        : '${API_BASE_URL}/api/reviews/latest';
       const res = await fetch(url, { credentials: 'include' });
       if (res.ok) setPrData(await res.json());
     } catch (err: any) {
