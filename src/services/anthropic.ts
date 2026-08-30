@@ -1,7 +1,7 @@
 import Anthropic from '@anthropic-ai/sdk';
 
 export const getAnthropicClient = () => {
-  const savedKeys = localStorage.getItem('lynxis_ai_keys');
+  const savedKeys = localStorage.getItem('aegis_ai_keys');
   let key = import.meta.env.VITE_ANTHROPIC_API_KEY;
   
   if (savedKeys) {

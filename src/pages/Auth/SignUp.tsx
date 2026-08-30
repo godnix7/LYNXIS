@@ -66,7 +66,7 @@ const SignUp = ({ onToggleMode }: { onToggleMode: () => void }) => {
                     <User className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20 group-focus-within:text-[var(--accent-primary)] transition-colors" size={18} />
                     <Input 
                         className="pl-12 h-14 bg-white/5 border-white/5 focus:bg-white/10" 
-                        placeholder="lynxis_dev" 
+                        placeholder="aegis_dev" 
                         value={username}
                         onChange={(e) => setUsername(e.target.value)}
                         required

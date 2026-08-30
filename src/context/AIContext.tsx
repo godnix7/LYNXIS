@@ -29,11 +29,11 @@ export const AIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
 
   useEffect(() => {
     try {
-      const savedKeys = localStorage.getItem('lynxis_ai_keys');
+      const savedKeys = localStorage.getItem('aegis_ai_keys');
       if (savedKeys) {
         setAiKeys(JSON.parse(savedKeys));
       }
-      const savedModel = localStorage.getItem('lynxis_selected_model');
+      const savedModel = localStorage.getItem('aegis_selected_model');
       if (savedModel) {
         setSelectedModel(savedModel as AIModel);
       }
@@ -44,11 +44,11 @@ export const AIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
 
   const saveKeys = (keys: AIKeys) => {
     setAiKeys(keys);
-    localStorage.setItem('lynxis_ai_keys', JSON.stringify(keys));
+    localStorage.setItem('aegis_ai_keys', JSON.stringify(keys));
   };
 
   useEffect(() => {
-    localStorage.setItem('lynxis_selected_model', selectedModel);
+    localStorage.setItem('aegis_selected_model', selectedModel);
   }, [selectedModel]);
 
   return (

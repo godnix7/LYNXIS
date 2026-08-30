@@ -84,7 +84,7 @@ export default function ReviewScorecard(props: ReviewScorecardProps) {
   const overallColorInfo = getScoreColorInfo(overallScore);
 
   const handleCopy = () => {
-    const summary = `## Lynxis Review Summary - PR #${pr_number}
+    const summary = `## Aegis Review Summary - PR #${pr_number}
 Overall: ${overallScore}/10
 - Security: ${security_score}/10
 - Code Quality: ${quality_score}/10

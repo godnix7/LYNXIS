@@ -35,7 +35,7 @@ export const AdminShell: React.FC<AdminShellProps> = ({ children, activeTab, onN
               <Shield className="text-white" size={24} />
             </div>
             <div>
-              <span className="text-xl font-bold tracking-tighter text-white">LYNXIS</span>
+              <span className="text-xl font-bold tracking-tighter text-white">AEGIS</span>
               <span className="text-[10px] font-bold block leading-none text-[var(--accent-primary)] uppercase tracking-widest mt-0.5">Admin v2</span>
             </div>
           </div>

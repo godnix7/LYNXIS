@@ -26,7 +26,7 @@ export const Navbar = ({ onNavigate, activeTab }: { onNavigate: (tab: string) =>
         <div className="flex items-center gap-8">
           <div className="flex items-center gap-3 cursor-pointer group" onClick={() => onNavigate('dashboard')}>
             <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-[var(--accent-warm)] to-[var(--accent-warm)]/60 group-hover:shadow-[0_0_20px_var(--accent-warm)] transition-all duration-500" />
-            <span className="text-lg font-bold tracking-[0.1em] text-[var(--text-warm)] uppercase" style={{ fontFamily: 'var(--font-heading)' }}>Lynxis</span>
+            <span className="text-lg font-bold tracking-[0.1em] text-[var(--text-warm)] uppercase" style={{ fontFamily: 'var(--font-heading)' }}>Aegis</span>
           </div>
 
           {/* Nav Links */}

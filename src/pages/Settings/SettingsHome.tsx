@@ -174,7 +174,7 @@ const SettingsHome = () => {
                 <div>
                   <h4 className="text-sm font-bold text-white">Model Routing</h4>
                   <p className="text-xs text-[var(--text-secondary)] mt-1 leading-relaxed">
-                    Lynxis automatically routes requests to the most efficient model based on your provided keys. 
+                    Aegis automatically routes requests to the most efficient model based on your provided keys. 
                     If multiple keys are present, preference is given to <span className="text-white">Claude 3.5 Sonnet</span> for code analysis.
                   </p>
                 </div>
